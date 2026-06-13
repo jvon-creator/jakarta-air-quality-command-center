@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 260" preserveAspectRatio="xMidYMax meet">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#5E7F96" stop-opacity="0.16"/>
+      <stop offset="0.34" stop-color="#2E5F80" stop-opacity="0.22"/>
+      <stop offset="0.64" stop-color="#7DAA92" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#C8A24D" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#C8A24D" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#C8A24D" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+  <path d="M0 229 C110 216 210 218 315 224 C430 230 520 210 632 218 C756 228 870 214 989 220 C1110 226 1240 210 1400 220 L1400 260 L0 260 Z" fill="#FFFFFF" fill-opacity="0.72"/>
+  <g fill="url(#sky)">
+    <rect x="12" y="164" width="42" height="72" rx="3"/>
+    <rect x="62" y="134" width="58" height="102" rx="4"/>
+    <rect x="130" y="154" width="48" height="82" rx="3"/>
+    <rect x="190" y="112" width="70" height="124" rx="5"/>
+    <path d="M276 236 L276 118 L318 118 L318 98 L350 98 L350 236 Z"/>
+    <rect x="366" y="145" width="48" height="91" rx="3"/>
+    <rect x="426" y="92" width="74" height="144" rx="5"/>
+    <rect x="512" y="128" width="54" height="108" rx="4"/>
+    <path d="M588 236 L588 164 L625 132 L662 164 L662 236 Z"/>
+    <rect x="676" y="150" width="60" height="86" rx="4"/>
+    <rect x="754" y="92" width="72" height="144" rx="5"/>
+    <rect x="840" y="128" width="46" height="108" rx="3"/>
+    <rect x="900" y="156" width="78" height="80" rx="4"/>
+    <rect x="994" y="110" width="60" height="126" rx="5"/>
+    <rect x="1066" y="142" width="56" height="94" rx="4"/>
+    <rect x="1136" y="120" width="72" height="116" rx="5"/>
+    <rect x="1222" y="156" width="52" height="80" rx="3"/>
+    <rect x="1288" y="134" width="78" height="102" rx="5"/>
+  </g>
+  <g transform="translate(650 0)">
+    <path d="M48 236 L56 101 L65 236 Z" fill="url(#gold)"/>
+    <path d="M60 92 L64 54 L68 92 Z" fill="#C8A24D" fill-opacity="0.25"/>
+    <circle cx="64" cy="103" r="17" fill="#C8A24D" fill-opacity="0.13"/>
+    <rect x="46" y="224" width="38" height="12" rx="2" fill="#C8A24D" fill-opacity="0.16"/>
+  </g>
+  <g fill="#FFFFFF" fill-opacity="0.23">
+    <rect x="78" y="150" width="7" height="8" rx="1"/><rect x="94" y="150" width="7" height="8" rx="1"/><rect x="78" y="172" width="7" height="8" rx="1"/><rect x="94" y="172" width="7" height="8" rx="1"/>
+    <rect x="444" y="114" width="8" height="8" rx="1"/><rect x="462" y="114" width="8" height="8" rx="1"/><rect x="444" y="138" width="8" height="8" rx="1"/><rect x="462" y="138" width="8" height="8" rx="1"/>
+    <rect x="772" y="114" width="8" height="8" rx="1"/><rect x="792" y="114" width="8" height="8" rx="1"/><rect x="772" y="140" width="8" height="8" rx="1"/><rect x="792" y="140" width="8" height="8" rx="1"/>
+    <rect x="1156" y="142" width="8" height="8" rx="1"/><rect x="1176" y="142" width="8" height="8" rx="1"/><rect x="1156" y="168" width="8" height="8" rx="1"/><rect x="1176" y="168" width="8" height="8" rx="1"/>
+  </g>
+  <path d="M0 237 H1400" stroke="#2E5F80" stroke-opacity="0.16" stroke-width="2"/>
+</svg>

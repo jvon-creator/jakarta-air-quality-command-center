@@ -34,7 +34,7 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Jakarta Air Quality Command Center"
+APP_TITLE = "Observatorium Langit Udara Jakarta"
 APP_SUBTITLE = (
     "Dashboard keputusan kualitas udara: membaca napas kota, sinyal risiko, "
     "lokasi prioritas, pencemar dominan, periode rawan, dan kepercayaan data."
@@ -258,6 +258,9 @@ hr { border: none; border-top: 1px solid var(--line); margin: 1.35rem 0; }
 .hero-meta .value { font-family: 'Barlow Condensed', 'Inter', sans-serif; font-size: 1.08rem; line-height: 1.08; color: var(--ink) !important; margin-top: 5px; }
 .hero-meta .status { display: inline-flex; margin-top: 10px; padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(0,166,118,.34); color: #064E3B !important; background: rgba(0,166,118,.13); font-weight: 800; font-size: .74rem; }
 .hero-meta .data-badge { display: inline-flex; margin-top: 8px; padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(202,138,4,.34); color: #4A3411 !important; background: #FFF7D6; font-weight: 900; font-size: .72rem; }
+.hero-meta .obs-badge { display: inline-flex; margin-top: 8px; margin-right: 6px; padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(2,132,199,.32); color: #075985 !important; background: #EAF6FF; font-weight: 900; font-size: .72rem; }
+.hero-meta .badge-line { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.hero-meta .badge-line .status, .hero-meta .badge-line .obs-badge, .hero-meta .badge-line .data-badge { margin-top: 0; }
 
 .section-title { display: flex; align-items: center; gap: 12px; margin: 1.55rem 0 .80rem 0; }
 .section-title .bar { width: 48px; height: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--leaf), var(--blue), var(--yellow), var(--orange)); box-shadow: 0 0 18px rgba(2,132,199,.16); }
@@ -1111,14 +1114,19 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
     if df.empty:
         period = "Data belum tersedia"
         status = "Perlu unggah data"
-        data_end = "—"
+        active_observations = "0"
     else:
-        start = df["tanggal_clean"].min().strftime("%d %b %Y")
-        end = df["tanggal_clean"].max().strftime("%d %b %Y")
-        latest = latest_year(df)
-        period = f"{start} – {end} · fokus default: {latest}"
         status = "Clean dataset final"
-        data_end = end
+        if filtered.empty:
+            period = "Tidak ada data pada filter aktif"
+            active_observations = "0"
+        else:
+            # Periode pada kartu mengikuti data yang benar-benar aktif setelah filter sidebar
+            # diterapkan, sehingga pimpinan tidak membaca periode global secara keliru.
+            start = filtered["tanggal_clean"].min().strftime("%d %b %Y")
+            end = filtered["tanggal_clean"].max().strftime("%d %b %Y")
+            period = f"{start} – {end}"
+            active_observations = fmt_int(len(filtered))
 
     if filtered.empty:
         avg_ispu = np.nan
@@ -1144,10 +1152,13 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
                 <div class="hero-copy">{html_escape(APP_SUBTITLE)}</div>
             </div>
             <div class="hero-meta">
-                <div class="label">Periode data</div>
+                <div class="label">Periode data aktif</div>
                 <div class="value">{html_escape(period)}</div>
-                <div class="status">{html_escape(status)}</div>
-                <div class="data-badge">Data historis · bukan status udara real-time</div>
+                <div class="badge-line">
+                    <div class="status">{html_escape(status)}</div>
+                    <div class="obs-badge">{html_escape(active_observations)} observasi aktif</div>
+                    <div class="data-badge">Data historis · bukan status udara real-time</div>
+                </div>
             </div>
         </div>
     </div>
@@ -2203,7 +2214,7 @@ def main() -> None:
 
     st.markdown("---")
     st.caption(
-        "Dashboard BI ISPU DKI Jakarta: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
+        "Dashboard BI ISPU DKI Jakarta · Color Contrast Decision Observatory: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
     )
 
 

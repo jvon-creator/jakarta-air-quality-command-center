@@ -269,6 +269,7 @@ hr { border: none; border-top: 1px solid var(--line); margin: 1.35rem 0; }
 .command-hero::before {
     content: "";
     position: absolute;
+    z-index: 0;
     left: -8%; right: -8%; bottom: -30px;
     height: 78px;
     background: linear-gradient(90deg, #00A676 0%, #0284C7 22%, #F4B400 47%, #F97316 66%, #E11D48 83%, #7C3AED 100%);
@@ -279,6 +280,7 @@ hr { border: none; border-top: 1px solid var(--line); margin: 1.35rem 0; }
 .command-hero::after {
     content: "";
     position: absolute;
+    z-index: 1;
     inset: 0;
     background:
         radial-gradient(circle at 77% 15%, rgba(16,32,51,.07) 0 1px, transparent 1.8px),
@@ -290,7 +292,7 @@ hr { border: none; border-top: 1px solid var(--line); margin: 1.35rem 0; }
     pointer-events: none;
 }
 
-.hero-grid { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; }
+.hero-grid { position: relative; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; }
 .hero-eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
     color: #064E3B !important;
@@ -310,6 +312,34 @@ hr { border: none; border-top: 1px solid var(--line); margin: 1.35rem 0; }
 .hero-meta .obs-badge { display: inline-flex; margin-top: 8px; margin-right: 6px; padding: 7px 10px; border-radius: 999px; border: 1px solid rgba(2,132,199,.32); color: #075985 !important; background: #EAF6FF; font-weight: 900; font-size: .72rem; }
 .hero-meta .badge-line { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .hero-meta .badge-line .status, .hero-meta .badge-line .obs-badge, .hero-meta .badge-line .data-badge { margin-top: 0; }
+
+
+/* Jakarta hero watermark: identitas kota ditempatkan khusus pada header utama.
+   SVG dibuat sangat halus, berada di belakang teks dan kartu periode data. */
+.jakarta-hero-watermark {
+    position: absolute;
+    right: clamp(22px, 5vw, 82px);
+    bottom: -18px;
+    width: min(760px, 58vw);
+    height: 188px;
+    z-index: 1;
+    pointer-events: none;
+    opacity: .38;
+    background-image:
+        linear-gradient(to top, rgba(255,255,255,.94) 0%, rgba(255,255,255,.70) 28%, rgba(255,255,255,.28) 62%, rgba(255,255,255,0) 100%),
+        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNDAwIDI2MCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNYXggbWVldCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InNreSIgeDE9IjAiIHgyPSIxIiB5MT0iMCIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1RTdGOTYiIHN0b3Atb3BhY2l0eT0iMC4xNiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjAuMzQiIHN0b3AtY29sb3I9IiMyRTVGODAiIHN0b3Atb3BhY2l0eT0iMC4yMiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjAuNjQiIHN0b3AtY29sb3I9IiM3REFBOTIiIHN0b3Atb3BhY2l0eT0iMC4xNSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNDOEEyNEQiIHN0b3Atb3BhY2l0eT0iMC4xMiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZCIgeDE9IjAiIHgyPSIwIiB5MT0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNDOEEyNEQiIHN0b3Atb3BhY2l0eT0iMC4yOCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNDOEEyNEQiIHN0b3Atb3BhY2l0eT0iMC4wOCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTAgMjI5IEMxMTAgMjE2IDIxMCAyMTggMzE1IDIyNCBDNDMwIDIzMCA1MjAgMjEwIDYzMiAyMTggQzc1NiAyMjggODcwIDIxNCA5ODkgMjIwIEMxMTEwIDIyNiAxMjQwIDIxMCAxNDAwIDIyMCBMMTQwMCAyNjAgTDAgMjYwIFoiIGZpbGw9IiNGRkZGRkYiIGZpbGwtb3BhY2l0eT0iMC43MiIvPgogIDxnIGZpbGw9InVybCgjc2t5KSI+CiAgICA8cmVjdCB4PSIxMiIgeT0iMTY0IiB3aWR0aD0iNDIiIGhlaWdodD0iNzIiIHJ4PSIzIi8+CiAgICA8cmVjdCB4PSI2MiIgeT0iMTM0IiB3aWR0aD0iNTgiIGhlaWdodD0iMTAyIiByeD0iNCIvPgogICAgPHJlY3QgeD0iMTMwIiB5PSIxNTQiIHdpZHRoPSI0OCIgaGVpZ2h0PSI4MiIgcng9IjMiLz4KICAgIDxyZWN0IHg9IjE5MCIgeT0iMTEyIiB3aWR0aD0iNzAiIGhlaWdodD0iMTI0IiByeD0iNSIvPgogICAgPHBhdGggZD0iTTI3NiAyMzYgTDI3NiAxMTggTDMxOCAxMTggTDMxOCA5OCBMMzUwIDk4IEwzNTAgMjM2IFoiLz4KICAgIDxyZWN0IHg9IjM2NiIgeT0iMTQ1IiB3aWR0aD0iNDgiIGhlaWdodD0iOTEiIHJ4PSIzIi8+CiAgICA8cmVjdCB4PSI0MjYiIHk9IjkyIiB3aWR0aD0iNzQiIGhlaWdodD0iMTQ0IiByeD0iNSIvPgogICAgPHJlY3QgeD0iNTEyIiB5PSIxMjgiIHdpZHRoPSI1NCIgaGVpZ2h0PSIxMDgiIHJ4PSI0Ii8+CiAgICA8cGF0aCBkPSJNNTg4IDIzNiBMNTg4IDE2NCBMNjI1IDEzMiBMNjYyIDE2NCBMNjYyIDIzNiBaIi8+CiAgICA8cmVjdCB4PSI2NzYiIHk9IjE1MCIgd2lkdGg9IjYwIiBoZWlnaHQ9Ijg2IiByeD0iNCIvPgogICAgPHJlY3QgeD0iNzU0IiB5PSI5MiIgd2lkdGg9IjcyIiBoZWlnaHQ9IjE0NCIgcng9IjUiLz4KICAgIDxyZWN0IHg9Ijg0MCIgeT0iMTI4IiB3aWR0aD0iNDYiIGhlaWdodD0iMTA4IiByeD0iMyIvPgogICAgPHJlY3QgeD0iOTAwIiB5PSIxNTYiIHdpZHRoPSI3OCIgaGVpZ2h0PSI4MCIgcng9IjQiLz4KICAgIDxyZWN0IHg9Ijk5NCIgeT0iMTEwIiB3aWR0aD0iNjAiIGhlaWdodD0iMTI2IiByeD0iNSIvPgogICAgPHJlY3QgeD0iMTA2NiIgeT0iMTQyIiB3aWR0aD0iNTYiIGhlaWdodD0iOTQiIHJ4PSI0Ii8+CiAgICA8cmVjdCB4PSIxMTM2IiB5PSIxMjAiIHdpZHRoPSI3MiIgaGVpZ2h0PSIxMTYiIHJ4PSI1Ii8+CiAgICA8cmVjdCB4PSIxMjIyIiB5PSIxNTYiIHdpZHRoPSI1MiIgaGVpZ2h0PSI4MCIgcng9IjMiLz4KICAgIDxyZWN0IHg9IjEyODgiIHk9IjEzNCIgd2lkdGg9Ijc4IiBoZWlnaHQ9IjEwMiIgcng9IjUiLz4KICA8L2c+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjUwIDApIj4KICAgIDxwYXRoIGQ9Ik00OCAyMzYgTDU2IDEwMSBMNjUgMjM2IFoiIGZpbGw9InVybCgjZ29sZCkiLz4KICAgIDxwYXRoIGQ9Ik02MCA5MiBMNjQgNTQgTDY4IDkyIFoiIGZpbGw9IiNDOEEyNEQiIGZpbGwtb3BhY2l0eT0iMC4yNSIvPgogICAgPGNpcmNsZSBjeD0iNjQiIGN5PSIxMDMiIHI9IjE3IiBmaWxsPSIjQzhBMjREIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz4KICAgIDxyZWN0IHg9IjQ2IiB5PSIyMjQiIHdpZHRoPSIzOCIgaGVpZ2h0PSIxMiIgcng9IjIiIGZpbGw9IiNDOEEyNEQiIGZpbGwtb3BhY2l0eT0iMC4xNiIvPgogIDwvZz4KICA8ZyBmaWxsPSIjRkZGRkZGIiBmaWxsLW9wYWNpdHk9IjAuMjMiPgogICAgPHJlY3QgeD0iNzgiIHk9IjE1MCIgd2lkdGg9IjciIGhlaWdodD0iOCIgcng9IjEiLz48cmVjdCB4PSI5NCIgeT0iMTUwIiB3aWR0aD0iNyIgaGVpZ2h0PSI4IiByeD0iMSIvPjxyZWN0IHg9Ijc4IiB5PSIxNzIiIHdpZHRoPSI3IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+PHJlY3QgeD0iOTQiIHk9IjE3MiIgd2lkdGg9IjciIGhlaWdodD0iOCIgcng9IjEiLz4KICAgIDxyZWN0IHg9IjQ0NCIgeT0iMTE0IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiByeD0iMSIvPjxyZWN0IHg9IjQ2MiIgeT0iMTE0IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiByeD0iMSIvPjxyZWN0IHg9IjQ0NCIgeT0iMTM4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiByeD0iMSIvPjxyZWN0IHg9IjQ2MiIgeT0iMTM4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiByeD0iMSIvPgogICAgPHJlY3QgeD0iNzcyIiB5PSIxMTQiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+PHJlY3QgeD0iNzkyIiB5PSIxMTQiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+PHJlY3QgeD0iNzcyIiB5PSIxNDAiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+PHJlY3QgeD0iNzkyIiB5PSIxNDAiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+CiAgICA8cmVjdCB4PSIxMTU2IiB5PSIxNDIiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+PHJlY3QgeD0iMTE3NiIgeT0iMTQyIiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiByeD0iMSIvPjxyZWN0IHg9IjExNTYiIHk9IjE2OCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgcng9IjEiLz48cmVjdCB4PSIxMTc2IiB5PSIxNjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHJ4PSIxIi8+CiAgPC9nPgogIDxwYXRoIGQ9Ik0wIDIzNyBIMTQwMCIgc3Ryb2tlPSIjMkU1RjgwIiBzdHJva2Utb3BhY2l0eT0iMC4xNiIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg==");
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: contain;
+    mix-blend-mode: multiply;
+    filter: saturate(.78) contrast(.92);
+}
+.jakarta-hero-watermark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.72) 18%, rgba(255,255,255,.20) 48%, rgba(255,255,255,.78) 100%);
+}
 
 .section-title { display: flex; align-items: center; gap: 12px; margin: 1.55rem 0 .80rem 0; }
 .section-title .bar { width: 48px; height: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--leaf), var(--blue), var(--yellow), var(--orange)); box-shadow: 0 0 18px rgba(2,132,199,.16); }
@@ -594,7 +624,7 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important;
 
 /* Keep the Jakarta watermark decorative only: hide it on small screens where space is limited. */
 @media (max-width: 980px) {
-    .block-container::after { display: none; }
+    .block-container::after, .jakarta-hero-watermark { display: none; }
 }
 
 </style>
@@ -1665,6 +1695,7 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
 
     hero_html = f"""
     <div class="command-hero" aria-label="Observatorium kualitas udara Jakarta dengan nuansa langit terang dan spektrum risiko ISPU">
+        <div class="jakarta-hero-watermark" aria-hidden="true"></div>
         <div class="hero-grid">
             <div>
                 <div class="hero-eyebrow">Kualitas Udara DKI Jakarta · {html_escape(str(current_page))}</div>

@@ -34,7 +34,7 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Observatorium Langit Udara Jakarta"
+APP_TITLE = "Jakarta Air Quality Command Center"
 APP_SUBTITLE = (
     "Dashboard keputusan kualitas udara: membaca napas kota, sinyal risiko, "
     "lokasi prioritas, pencemar dominan, periode rawan, dan kepercayaan data."
@@ -279,8 +279,6 @@ hr { border: none; border-top: 1px solid var(--line); margin: 1.35rem 0; }
 .warning-panel { border: 1px solid rgba(202,138,4,.28); border-left: 6px solid var(--yellow); border-radius: 22px; background: linear-gradient(135deg, #FFF7D6, #FFFFFF); padding: 16px 18px; margin: 1rem 0; box-shadow: var(--shadow-soft); }
 .warning-panel p { margin: 0; color: #4A3411 !important; line-height: 1.58; font-weight: 600; }
 
-.pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0 0; }
-.pill { display: inline-flex; align-items: center; padding: 7px 10px; border-radius: 999px; background: #FFFFFF; border: 1px solid var(--line); color: var(--slate) !important; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .69rem; font-weight: 800; box-shadow: 0 8px 18px rgba(15,23,42,.05); }
 .small-muted { color: var(--muted) !important; font-size: .84rem; line-height: 1.5; }
 
 [data-testid="stMetric"] { background: #FFFFFF; border: 1px solid var(--line); border-radius: 20px; padding: 14px 16px; box-shadow: var(--shadow-soft); }
@@ -1127,14 +1125,12 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
         unhealthy = np.nan
         top_station_code = "—"
         top_critical = "—"
-        filtered_hint = "Tidak ada observasi aktif"
     else:
         avg_ispu = filtered["max"].mean()
         unhealthy = pct_true(filtered["flag_tidak_sehat_plus"])
         st_summary = station_summary(filtered)
         top_station_code = station_code(st_summary.iloc[0]["stasiun"]) if not st_summary.empty else "—"
         top_critical = mode_or_dash(filtered["critical"])
-        filtered_hint = f"{fmt_int(len(filtered))} observasi tanggal-stasiun aktif"
 
     status_cat = ispu_status_from_average(avg_ispu)
     page_purpose = PAGE_PURPOSE.get(current_page, "")
@@ -1146,13 +1142,6 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
                 <div class="hero-eyebrow">Kualitas Udara DKI Jakarta · {html_escape(str(current_page))}</div>
                 <h1 class="hero-title">{html_escape(APP_TITLE)}</h1>
                 <div class="hero-copy">{html_escape(APP_SUBTITLE)}</div>
-                <div class="pill-row">
-                    <div class="pill">Ambang keputusan: ISPU 101</div>
-                    <div class="pill">Metrik utama: % observasi Tidak Sehat+</div>
-                    <div class="pill">Unit: tanggal-stasiun</div>
-                    <div class="pill">Data historis, bukan real-time</div>
-                    <div class="pill">{html_escape(filtered_hint)}</div>
-                </div>
             </div>
             <div class="hero-meta">
                 <div class="label">Periode data</div>
@@ -2214,7 +2203,7 @@ def main() -> None:
 
     st.markdown("---")
     st.caption(
-        "Dashboard BI ISPU DKI Jakarta : spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
+        "Dashboard BI ISPU DKI Jakarta: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
     )
 
 

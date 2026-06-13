@@ -1375,7 +1375,7 @@ def fig_unhealthy_by_year(df: pd.DataFrame, title: str = "% Tidak Sehat+ per tah
             xanchor="left",
             x=0,
             bgcolor="rgba(255,255,255,0)",
-            font=dict(color="#000000", size=12),
+            font=dict(color="#334155", size=12),
         ),
     )
     return fig

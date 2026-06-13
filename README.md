@@ -1,4 +1,4 @@
-# Observatorium Langit Udara Jakarta
+# Jakarta Air QUality Command Center
 
 **Dashboard BI ISPU DKI Jakarta** adalah aplikasi Streamlit untuk membaca kondisi kualitas udara DKI Jakarta berdasarkan data historis ISPU pada unit observasi **tanggal-stasiun**. Dashboard ini dirancang sebagai alat bantu pengambilan keputusan bagi pimpinan dan tim teknis, dengan fokus pada kondisi risiko, lokasi prioritas, pencemar kritis, pola temporal, pola musiman, serta kepercayaan data.
 

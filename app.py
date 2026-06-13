@@ -34,7 +34,7 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Observatorium Langit Udara Jakarta"
+APP_TITLE = "Jakarta Air Quality Command Center"
 APP_SUBTITLE = (
     "Dashboard keputusan kualitas udara: membaca napas kota, sinyal risiko, "
     "lokasi prioritas, pencemar dominan, periode rawan, dan kepercayaan data."

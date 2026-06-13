@@ -34,7 +34,7 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Observatorium Langit Udara Jakarta"
+APP_TITLE = "Jakarta Air QUality Command Center"
 APP_SUBTITLE = (
     "Dashboard keputusan kualitas udara: membaca napas kota, sinyal risiko, "
     "lokasi prioritas, pencemar dominan, periode rawan, dan kepercayaan data."
@@ -3090,7 +3090,7 @@ def main() -> None:
 
     st.markdown("---")
     st.caption(
-        "Dashboard BI ISPU DKI Jakarta · Color Contrast Decision Observatory: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
+        "Dashboard BI ISPU DKI Jakarta: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
     )
 
 

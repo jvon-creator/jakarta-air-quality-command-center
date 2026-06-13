@@ -34,7 +34,7 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Jakarta Air Quality Command Center"
+APP_TITLE = "Observatorium Langit Udara Jakarta"
 APP_SUBTITLE = (
     "Dashboard keputusan kualitas udara: membaca napas kota, sinyal risiko, "
     "lokasi prioritas, pencemar dominan, periode rawan, dan kepercayaan data."
@@ -1035,8 +1035,15 @@ def apply_fig_style(fig: go.Figure, height: Optional[int] = None, legend: bool =
     title_text = fig.layout.title.text or ""
     base_height = height or 430
     bottom_margin = 118 if legend else 58
-    top_margin = 78
-    final_height = base_height + (58 if legend else 0)
+    # Beberapa grafik tren memiliki annotation badge di atas plot
+    # (misalnya PM2.5 mulai tersedia). Margin atas dibuat dinamis agar
+    # label konteks tidak menumpuk dengan judul chart atau label ambang.
+    has_top_badge = any(
+        getattr(annotation, "yref", None) == "paper" and (getattr(annotation, "y", 0) or 0) > 1
+        for annotation in (fig.layout.annotations or [])
+    )
+    top_margin = 118 if has_top_badge else 78
+    final_height = base_height + (76 if legend else 18 if has_top_badge else 0)
 
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
@@ -1148,15 +1155,29 @@ def add_threshold_lines(fig: go.Figure, include_all: bool = False) -> go.Figure:
     if include_all:
         thresholds.extend([(201, "Sangat Tidak Sehat 201", "#E11D48"), (301, "Berbahaya 301", "#7C3AED")])
     for y, label, color in thresholds:
+        # Jangan memakai annotation bawaan add_hline karena pada grafik tren
+        # labelnya dapat menumpuk dengan annotation konteks seperti PM2.5.
         fig.add_hline(
             y=y,
             line_dash="dash",
             line_width=1.5,
             line_color=color,
-            annotation_text=label,
-            annotation_position="top left",
-            annotation_font_color=color,
-            annotation_font_size=11,
+        )
+        fig.add_annotation(
+            x=0.995,
+            xref="paper",
+            y=y,
+            yref="y",
+            text=label,
+            showarrow=False,
+            xanchor="right",
+            yanchor="bottom",
+            yshift=6,
+            font=dict(color=color, size=11, family="Inter, Arial, sans-serif"),
+            bgcolor="rgba(255,255,255,0.92)",
+            bordercolor=color,
+            borderwidth=0.7,
+            borderpad=3,
         )
     return fig
 
@@ -1466,16 +1487,29 @@ def add_context_annotations(fig: go.Figure, df: pd.DataFrame) -> go.Figure:
     covid_start = CONTEXT_EVENTS["covid_start"]
     covid_end = CONTEXT_EVENTS["covid_end"]
     if date_min <= covid_end and date_max >= covid_start:
+        x0 = max(covid_start, date_min)
+        x1 = min(covid_end, date_max)
         fig.add_vrect(
-            x0=max(covid_start, date_min),
-            x1=min(covid_end, date_max),
+            x0=x0,
+            x1=x1,
             fillcolor="#64748B",
             opacity=0.10,
             line_width=0,
-            annotation_text="COVID-19 (konteks)",
-            annotation_position="top left",
-            annotation_font_color="#334155",
-            annotation_font_size=11,
+        )
+        fig.add_annotation(
+            x=x0 + (x1 - x0) / 2,
+            xref="x",
+            y=1.16,
+            yref="paper",
+            text="COVID-19 · konteks aktivitas",
+            showarrow=False,
+            xanchor="center",
+            yanchor="bottom",
+            font=dict(color="#334155", size=11, family="Inter, Arial, sans-serif"),
+            bgcolor="rgba(255,255,255,0.90)",
+            bordercolor="rgba(51,65,85,0.35)",
+            borderwidth=0.7,
+            borderpad=3,
         )
 
     # Dynamic PM2.5 availability annotation.
@@ -1488,10 +1522,22 @@ def add_context_annotations(fig: go.Figure, df: pd.DataFrame) -> go.Figure:
                 line_dash="dot",
                 line_width=1.5,
                 line_color="#16A34A",
-                annotation_text=f"PM2.5 mulai tersedia ({pm25_year})",
-                annotation_position="top right",
-                annotation_font_color="#166534",
-                annotation_font_size=11,
+            )
+            midpoint = date_min + (date_max - date_min) / 2
+            fig.add_annotation(
+                x=x_pm25,
+                xref="x",
+                y=1.08,
+                yref="paper",
+                text=f"PM2.5 tersedia sejak {pm25_year}",
+                showarrow=False,
+                xanchor="left" if x_pm25 <= midpoint else "right",
+                yanchor="bottom",
+                font=dict(color="#166534", size=11, family="Inter, Arial, sans-serif"),
+                bgcolor="rgba(255,255,255,0.92)",
+                bordercolor="rgba(22,101,52,0.45)",
+                borderwidth=0.7,
+                borderpad=3,
             )
     return fig
 
@@ -3044,7 +3090,7 @@ def main() -> None:
 
     st.markdown("---")
     st.caption(
-        "Dashboard BI ISPU DKI Jakarta : spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
+        "Dashboard BI ISPU DKI Jakarta · Color Contrast Decision Observatory: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
     )
 
 

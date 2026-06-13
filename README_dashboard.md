@@ -1,113 +1,101 @@
-# Dashboard BI ISPU DKI Jakarta — Decision-Safe Color Contrast Edition
+# Dashboard BI ISPU DKI Jakarta — Light Tables Revisi
 
-Dashboard Streamlit ini dirancang sebagai **Observatorium Langit Udara Jakarta**: dashboard Business Intelligence untuk membantu Kepala Dinas Lingkungan Hidup membaca kondisi kualitas udara, lokasi prioritas, pencemar dominan, periode rawan, dan tingkat kepercayaan data.
+Dashboard Streamlit untuk Tugas 6 Business Intelligence Analisis ISPU DKI Jakarta.
 
-Versi ini memperkuat dashboard agar lebih aman untuk pengambilan keputusan, lebih jelas secara metodologi, dan lebih mudah dibaca dari sisi UI/UX.
+## Fokus revisi ini
 
-## Revisi utama versi ini
+Versi ini memperbaiki tampilan tabel agar konsisten dengan **light theme** dashboard:
 
-- Hero dibuat lebih compact agar KPI utama lebih cepat terlihat di layar pertama.
-- Ditambahkan badge permanen **Data historis · bukan status udara real-time**.
-- Semua persentase risiko diperjelas sebagai **% observasi tanggal-stasiun**, bukan otomatis dibaca sebagai % hari Jakarta.
-- KPI dan insight otomatis kini menyertakan denominator, misalnya jumlah observasi tanggal-stasiun pada filter aktif.
-- Ditambahkan **schema validation** untuk memeriksa kolom wajib sebelum dashboard berjalan.
-- Ditambahkan catatan bahwa dashboard bersifat **deskriptif-diagnostik**, bukan prediktif.
-- Import yang tidak digunakan dibersihkan agar kode lebih rapi.
-- Empty state dan error state tetap dipertahankan agar dashboard tidak tampak kosong saat data/filter bermasalah.
+- tabel Ringkasan Prioritas per Stasiun;
+- tabel Tabel Ringkas Keputusan Lokasi;
+- tabel Kalender Antisipasi Operasional;
+- tabel Hasil Validasi Akhir;
+- tabel Jejak Pembersihan Data;
+- tabel Audit Duplikasi Tanggal-Stasiun.
 
-## Filosofi desain
+Tabel tidak lagi memakai renderer `st.dataframe` bawaan yang dapat mengikuti dark theme browser/Streamlit. Semua tabel penting dirender sebagai **custom light executive table** dengan:
 
-Tema visual menggunakan konsep **Air Quality Spectrum**: dashboard light theme yang berwarna, tetapi tetap menjaga kontras tinggi. Warna utama mengambil inspirasi dari udara, langit, vegetasi, kabut, dan spektrum risiko ISPU.
+- background putih/soft blue;
+- teks utama navy gelap;
+- header terang dengan kontras tinggi;
+- progress bar merah-oranye-hijau untuk % Tidak Sehat+;
+- chip warna untuk kategori, pencemar, dan status;
+- scroll horizontal/vertikal untuk tabel panjang;
+- teks panjang tetap dapat dibaca tanpa merusak layout.
 
-Prinsip visual:
-
-- Background boleh berwarna, tetapi konten utama berada di panel putih.
-- Teks utama memakai navy gelap agar terbaca di semua panel.
-- Warna kategori ISPU tetap tegas dan konsisten.
-- Panel insight menggunakan warna lembut, tetapi teks tetap gelap.
-- Elemen dekoratif tidak boleh mengalahkan keterbacaan data.
-
-## Sistem warna kategori ISPU
-
-| Kategori | Warna | Fungsi |
-|---|---:|---|
-| BAIK | Hijau | Udara relatif aman |
-| SEDANG | Kuning | Perlu dipantau |
-| TIDAK SEHAT | Oranye | Risiko mulai meningkat |
-| SANGAT TIDAK SEHAT | Merah | Risiko tinggi |
-| BERBAHAYA | Ungu | Kondisi ekstrem |
-
-## Isi dashboard
-
-Dashboard terdiri atas menu:
-
-1. **Overview Kualitas Udara** — kondisi terkini dan prioritas cepat.
-2. **Tren Temporal** — arah perubahan dan periode melewati ambang risiko.
-3. **Perbandingan Stasiun** — lokasi prioritas pengendalian.
-4. **Pencemar Kritis** — parameter pencemar yang perlu dikendalikan.
-5. **Pola Musiman** — kalender antisipasi periode rawan.
-6. **Data Quality / Audit Trail** — kelayakan data untuk keputusan.
-
-Default analisis menggunakan **tahun terakhir tersedia** karena keputusan pimpinan membutuhkan kondisi yang paling relevan saat ini. Data historis tetap tersedia melalui filter.
-
-## Data contract
-
-Clean dataset minimal harus memiliki salah satu kolom tanggal:
-
-- `tanggal_clean`; atau
-- `tanggal`.
-
-Kolom wajib:
-
-- `stasiun`
-- `max`
-- `categori`
-- `critical`
-
-Kolom rekomendasi:
-
-- `pm10`
-- `pm25`
-- `so2`
-- `co`
-- `o3`
-- `no2`
-- `flag_tidak_sehat_plus`
-
-Jika kolom wajib hilang, dashboard akan menampilkan error yang menjelaskan kolom mana yang belum sesuai kontrak data.
-
-## File yang dibutuhkan
-
-Pastikan folder `data/` berisi:
-
-- `Clean_Dataset_ISPU_Jakarta_Tugas_3_4_5_FINAL.csv`
-- `Data_Cleaning_Log_ISPU_Jakarta_Tugas_3_4_5_FINAL.csv`
-- `Audit_Duplikasi_Tanggal_Stasiun_ISPU_Jakarta_FINAL.csv`
-- `Validasi_Final_Clean_Dataset_ISPU_Jakarta_FINAL.csv`
-
-## Cara menjalankan lokal
+## Cara menjalankan
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Catatan deployment Streamlit Cloud
+## Struktur file deployment
 
-Jika dashboard terlihat kosong atau hanya menampilkan background, cek hal berikut:
+Pastikan file berikut ada di root repository Streamlit Cloud:
 
-1. Pastikan seluruh file CSV di folder `data/` ikut terunggah ke repository.
-2. Pastikan nama file sama persis dengan daftar file di atas.
-3. Pastikan `requirements.txt` terbaca oleh Streamlit Cloud.
-4. Pastikan folder `.streamlit/` dan `config.toml` ikut terunggah agar light theme aktif.
-5. Jika filter menghasilkan nol data, dashboard akan menampilkan empty state, bukan grafik kosong.
+```text
+app.py
+requirements.txt
+README_dashboard.md
+.streamlit/config.toml
+data/
+```
 
-## Cara membaca dashboard
+Folder `data/` harus berisi:
 
-Ukuran utama yang dipakai adalah **% observasi Tidak Sehat+** pada unit **tanggal-stasiun**. Artinya, denominator adalah jumlah observasi pada filter aktif, bukan otomatis jumlah hari kalender Jakarta.
+```text
+Clean_Dataset_ISPU_Jakarta_Tugas_3_4_5_FINAL.csv
+Data_Cleaning_Log_ISPU_Jakarta_Tugas_3_4_5_FINAL.csv
+Audit_Duplikasi_Tanggal_Stasiun_ISPU_Jakarta_FINAL.csv
+Validasi_Final_Clean_Dataset_ISPU_Jakarta_FINAL.csv
+```
 
-Untuk membaca “hari Jakarta Tidak Sehat+”, diperlukan agregasi khusus per tanggal, misalnya satu hari dianggap Tidak Sehat+ jika minimal satu stasiun masuk kategori Tidak Sehat+. Dashboard ini tetap memakai unit tanggal-stasiun agar perbandingan antar stasiun dan periode konsisten.
+## Catatan interpretasi
 
-Nilai `max` adalah indeks ISPU, bukan konsentrasi polutan mentah. Kolom `critical` menunjukkan parameter pembentuk indeks tertinggi pada observasi tersebut. Pada kasus multi-critical, interpretasi pencemar dominan perlu hati-hati.
+Dashboard ini menggunakan unit observasi **tanggal-stasiun**. Persentase Tidak Sehat+ berarti persentase observasi tanggal-stasiun yang masuk kategori Tidak Sehat, Sangat Tidak Sehat, atau Berbahaya pada filter aktif.
 
-Dashboard ini bersifat **deskriptif-diagnostik**, bukan prediktif. Untuk prediksi kualitas udara diperlukan model tambahan dengan variabel meteorologi, emisi, lalu lintas, aktivitas industri, dan validasi lapangan.
+Dashboard bersifat **deskriptif-diagnostik** dan menggunakan data historis, bukan status udara real-time.
+
+## Revisi Light Table
+
+Versi ini mengganti tabel penting dari `st.dataframe` menjadi tabel HTML light theme berkontras tinggi. Tujuannya agar tabel ringkasan prioritas per stasiun, tabel keputusan lokasi, kalender antisipasi operasional, hasil validasi akhir, jejak pembersihan data, dan audit duplikasi tetap mudah dibaca meskipun browser atau Streamlit mewarisi preferensi dark mode.
+
+Prinsip desain tabel:
+- latar tabel putih dan header biru muda;
+- teks utama navy gelap untuk kontras tinggi;
+- bar persentase tetap berwarna tetapi label angka tetap gelap;
+- badge status risiko menggunakan warna lembut dengan teks gelap;
+- kolom panjang seperti arahan operasional dan justifikasi dapat membungkus teks.
+
+## Revisi UI terbaru
+
+Bagian chip/pill pada hero yang berisi `Ambang keputusan`, `Metrik utama`, `Unit`, dan `Data historis` telah dihapus agar header lebih bersih dan KPI utama lebih cepat terlihat.
+
+
+## Revisi Active Observations
+
+- Kartu periode data pada header sekarang mengikuti periode data yang aktif setelah filter sidebar diterapkan.
+- Ditambahkan indikator jumlah observasi aktif pada kartu periode agar denominator KPI langsung terlihat.
+
+## Revisi No Redundant KPI
+
+Versi ini menghapus decision cards kecil di bawah hero agar tidak mengulang informasi yang sudah muncul pada KPI utama. Header hanya menampilkan konteks data aktif: periode data aktif, jumlah observasi aktif, status clean dataset, dan catatan bahwa data bersifat historis. Satu-satunya pusat KPI eksekutif berada pada bagian **Napas Kota Terkini**, yang kini memuat rata-rata ISPU, median ISPU, % Tidak Sehat+, kategori dominan, stasiun prioritas, dan pencemar dominan.
+
+
+## Revisi visual heatmap
+
+Versi ini memperbaiki keterbacaan legenda/colorbar heatmap dan menambahkan angka jumlah observasi pada setiap petak heatmap pencemar kritis per stasiun, sehingga stakeholder dapat membaca intensitas warna sekaligus nilai absolutnya.
+
+
+## Revisi Peta Interaktif SPKU
+
+Dashboard menambahkan peta interaktif pada menu **Perbandingan Stasiun** dengan pendekatan metodologis yang aman:
+
+- Peta menampilkan **titik lokasi SPKU**, bukan pewarnaan seluruh wilayah Jakarta.
+- Warna marker menunjukkan **status risiko** berdasarkan persentase observasi Tidak Sehat+ pada filter aktif.
+- Ukuran marker menunjukkan intensitas frekuensi Tidak Sehat+.
+- Tooltip menampilkan stasiun, wilayah, rata-rata ISPU, % Tidak Sehat+, kategori dominan, pencemar dominan, dan jumlah observasi aktif.
+- Koordinat stasiun digunakan sebagai titik aproksimasi untuk konteks visual, sehingga interpretasi kebijakan tetap perlu dilengkapi validasi lapangan dan data sumber emisi.
+
+Catatan penting: peta ini tidak melakukan interpolasi kualitas udara dan tidak menyimpulkan kondisi seluruh kecamatan/kota administratif dari satu titik stasiun.

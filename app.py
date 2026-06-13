@@ -83,6 +83,10 @@ MENU_ITEMS = [
     "Data Quality / Audit Trail",
 ]
 
+# Plotly toolbar can overlap titles on Streamlit Cloud screenshots.
+# Hide it by default; users still get hover tooltips and interaction.
+PLOTLY_CONFIG = {"displayModeBar": False, "responsive": True}
+
 
 PAGE_PURPOSE = {
     "Overview Kualitas Udara": "Kondisi terkini dan prioritas cepat untuk keputusan pimpinan.",
@@ -1358,8 +1362,23 @@ def fig_unhealthy_by_year(df: pd.DataFrame, title: str = "% Tidak Sehat+ per tah
         hover_data={"observasi": True, "status": True, "persen_tidak_sehat_plus": ":.1f"},
     )
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside", cliponaxis=False)
-    fig.update_yaxes(range=[0, max(10, yearly["persen_tidak_sehat_plus"].max() * 1.25)])
-    return apply_fig_style(fig, height=410)
+    fig.update_yaxes(range=[0, max(10, yearly["persen_tidak_sehat_plus"].max() * 1.30)])
+    fig = apply_fig_style(fig, height=470)
+    fig.update_layout(
+        title=dict(text=title, y=0.96, x=0.0, xanchor="left", yanchor="top"),
+        margin=dict(t=92, r=24, b=86, l=48),
+        legend=dict(
+            title_text="Status risiko",
+            orientation="h",
+            yanchor="top",
+            y=-0.24,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0)",
+            font=dict(color="#334155", size=12),
+        ),
+    )
+    return fig
 
 
 def fig_category_by_year(df: pd.DataFrame, title: str = "Komposisi kategori ISPU per tahun") -> go.Figure:
@@ -1377,7 +1396,22 @@ def fig_category_by_year(df: pd.DataFrame, title: str = "Komposisi kategori ISPU
     )
     fig.update_layout(barmode="stack")
     fig.update_yaxes(range=[0, 100], ticksuffix="%")
-    return apply_fig_style(fig, height=430)
+    fig = apply_fig_style(fig, height=490)
+    fig.update_layout(
+        title=dict(text=title, y=0.96, x=0.0, xanchor="left", yanchor="top"),
+        margin=dict(t=96, r=24, b=90, l=50),
+        legend=dict(
+            title_text="Kategori",
+            orientation="h",
+            yanchor="top",
+            y=-0.24,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0)",
+            font=dict(color="#334155", size=12),
+        ),
+    )
+    return fig
 
 
 def fig_station_risk_bar(summary: pd.DataFrame, title: str = "Ranking risiko per stasiun") -> go.Figure:
@@ -1691,9 +1725,9 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     section_title("Komposisi risiko dan pencemar utama")
     left, right = st.columns([1.1, 1])
     with left:
-        st.plotly_chart(fig_category_distribution(df), use_container_width=True)
+        st.plotly_chart(fig_category_distribution(df), use_container_width=True, config=PLOTLY_CONFIG)
     with right:
-        st.plotly_chart(fig_critical_distribution(df), use_container_width=True)
+        st.plotly_chart(fig_critical_distribution(df), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Ringkasan prioritas per stasiun")
     table = stations.copy()
@@ -1775,13 +1809,13 @@ def page_trend(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         kpi_card("Tahun risiko tertinggi", str(int(worst_year["tahun"])) if worst_year is not None else "—", note=(fmt_pct(worst_year["persen_tidak_sehat_plus"], 1) if worst_year is not None else "—"), accent="#E11D48")
 
     section_title("Tren ISPU dengan ambang Tidak Sehat")
-    st.plotly_chart(fig_trend_line(df, granularity, view_mode, include_all_thresholds), use_container_width=True)
+    st.plotly_chart(fig_trend_line(df, granularity, view_mode, include_all_thresholds), use_container_width=True, config=PLOTLY_CONFIG)
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(fig_unhealthy_by_year(df), use_container_width=True)
+        st.plotly_chart(fig_unhealthy_by_year(df), use_container_width=True, config=PLOTLY_CONFIG)
     with right:
-        st.plotly_chart(fig_category_by_year(df), use_container_width=True)
+        st.plotly_chart(fig_category_by_year(df), use_container_width=True, config=PLOTLY_CONFIG)
 
     trend_direction = "memburuk" if not pd.isna(delta_unhealthy) and delta_unhealthy > 0 else "membaik/menurun" if not pd.isna(delta_unhealthy) and delta_unhealthy < 0 else "relatif stabil atau belum dapat dibandingkan"
     insight_panel(
@@ -1825,12 +1859,12 @@ def page_station(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     section_title("Perbandingan risiko antar SPKU")
     left, right = st.columns([1, 1.05])
     with left:
-        st.plotly_chart(fig_station_risk_bar(summary), use_container_width=True)
+        st.plotly_chart(fig_station_risk_bar(summary), use_container_width=True, config=PLOTLY_CONFIG)
     with right:
-        st.plotly_chart(fig_station_bubble(summary), use_container_width=True)
+        st.plotly_chart(fig_station_bubble(summary), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Komposisi kategori per stasiun")
-    st.plotly_chart(fig_station_category_stack(df), use_container_width=True)
+    st.plotly_chart(fig_station_category_stack(df), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Tabel ringkas keputusan lokasi")
     table = summary[["kode", "stasiun", "observasi", "rata_rata_ispu", "persen_tidak_sehat_plus", "kategori_dominan", "pencemar_dominan", "status_risiko"]].copy()
@@ -1898,22 +1932,22 @@ def page_critical(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     section_title("Distribusi pencemar kritis")
     left, right = st.columns([1, 1])
     with left:
-        st.plotly_chart(fig_critical_distribution(crit_df, "Ranking pencemar kritis keseluruhan"), use_container_width=True)
+        st.plotly_chart(fig_critical_distribution(crit_df, "Ranking pencemar kritis keseluruhan"), use_container_width=True, config=PLOTLY_CONFIG)
     with right:
-        st.plotly_chart(fig_critical_heatmap(crit_df), use_container_width=True)
+        st.plotly_chart(fig_critical_heatmap(crit_df), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Pencemar kritis menurut lokasi dan waktu")
     col1, col2 = st.columns(2)
     with col1:
-        st.plotly_chart(fig_critical_by_station(crit_df), use_container_width=True)
+        st.plotly_chart(fig_critical_by_station(crit_df), use_container_width=True, config=PLOTLY_CONFIG)
     with col2:
-        st.plotly_chart(fig_critical_trend_year(crit_df), use_container_width=True)
+        st.plotly_chart(fig_critical_trend_year(crit_df), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Pencemar pada kondisi Tidak Sehat+")
     if unhealthy_crit.empty:
         st.info("Tidak ada observasi Tidak Sehat+ pada filter aktif.")
     else:
-        st.plotly_chart(fig_critical_distribution(unhealthy_crit, "Pencemar dominan khusus kategori Tidak Sehat+"), use_container_width=True)
+        st.plotly_chart(fig_critical_distribution(unhealthy_crit, "Pencemar dominan khusus kategori Tidak Sehat+"), use_container_width=True, config=PLOTLY_CONFIG)
 
     insight_panel(
         "Insight pencemar",
@@ -1959,16 +1993,16 @@ def page_seasonal(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         kpi_card("Pencemar bulan rawan", str(worst_risk["pencemar_dominan"]), note=f"pada {worst_risk['nama_bulan']}", accent=CRITICAL_COLORS.get(str(worst_risk["pencemar_dominan"]), "#F4B400"))
 
     metric = st.radio("Metrik heatmap", ["Rata-rata ISPU", "% Tidak Sehat+"], horizontal=True, index=0)
-    st.plotly_chart(fig_seasonal_heatmap(df, metric), use_container_width=True)
+    st.plotly_chart(fig_seasonal_heatmap(df, metric), use_container_width=True, config=PLOTLY_CONFIG)
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(fig_monthly_bars(df, "Rata-rata ISPU"), use_container_width=True)
+        st.plotly_chart(fig_monthly_bars(df, "Rata-rata ISPU"), use_container_width=True, config=PLOTLY_CONFIG)
     with right:
-        st.plotly_chart(fig_monthly_bars(df, "% Tidak Sehat+"), use_container_width=True)
+        st.plotly_chart(fig_monthly_bars(df, "% Tidak Sehat+"), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Pola musiman per stasiun")
-    st.plotly_chart(fig_monthly_station_line(df), use_container_width=True)
+    st.plotly_chart(fig_monthly_station_line(df), use_container_width=True, config=PLOTLY_CONFIG)
 
     # Operational calendar table
     calendar = monthly.copy()
@@ -2055,13 +2089,13 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
         yearly = full_df.groupby("tahun").size().reset_index(name="observasi")
         fig = px.bar(yearly, x="tahun", y="observasi", title="Jumlah observasi per tahun", labels={"tahun": "Tahun", "observasi": "Observasi"})
         fig.update_traces(marker_color="#0284C7", text=yearly["observasi"], textposition="outside", cliponaxis=False)
-        st.plotly_chart(apply_fig_style(fig, height=380, legend=False), use_container_width=True)
+        st.plotly_chart(apply_fig_style(fig, height=380, legend=False), use_container_width=True, config=PLOTLY_CONFIG)
     with col2:
         station_cov = full_df.groupby("stasiun").size().reset_index(name="observasi")
         station_cov["kode"] = station_cov["stasiun"].map(station_code)
         fig = px.bar(station_cov.sort_values("observasi", ascending=True), x="observasi", y="kode", orientation="h", title="Jumlah observasi per stasiun", labels={"observasi": "Observasi", "kode": "Stasiun"}, hover_data={"stasiun": True})
         fig.update_traces(marker_color="#00A676", text="observasi", textposition="outside", cliponaxis=False)
-        st.plotly_chart(apply_fig_style(fig, height=380, legend=False), use_container_width=True)
+        st.plotly_chart(apply_fig_style(fig, height=380, legend=False), use_container_width=True, config=PLOTLY_CONFIG)
 
     section_title("Completeness parameter pencemar")
     available_pollutants = [c for c in POLLUTANT_COLS if c in full_df.columns]
@@ -2082,7 +2116,7 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
     )
     fig.update_traces(marker_color="#F4B400", texttemplate="%{text:.1f}%", textposition="outside", cliponaxis=False)
     fig.update_xaxes(range=[0, 105], ticksuffix="%")
-    st.plotly_chart(apply_fig_style(fig, height=420, legend=False), use_container_width=True)
+    st.plotly_chart(apply_fig_style(fig, height=420, legend=False), use_container_width=True, config=PLOTLY_CONFIG)
     insight_panel(
         "Catatan batasan data",
         "Ketersediaan parameter tidak selalu sama sepanjang periode historis. Khusus PM2.5, interpretasi lintas tahun perlu mempertimbangkan periode kemunculan data agar Kepala Dinas tidak salah menyimpulkan dominasi atau absennya PM2.5 pada tahun awal.",
@@ -2135,13 +2169,13 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
                 act = audit_df.groupby("dedup_action").size().reset_index(name="jumlah")
                 fig = px.bar(act, x="dedup_action", y="jumlah", title="Status penanganan duplikasi", labels={"dedup_action": "Tindakan", "jumlah": "Jumlah"}, text="jumlah")
                 fig.update_traces(marker_color="#7C3AED", textposition="outside", cliponaxis=False)
-                st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True)
+                st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True, config=PLOTLY_CONFIG)
         with col2:
             if "duplicate_type" in audit_df.columns:
                 typ = audit_df.groupby("duplicate_type").size().reset_index(name="jumlah")
                 fig = px.bar(typ, x="duplicate_type", y="jumlah", title="Jenis duplikasi", labels={"duplicate_type": "Jenis", "jumlah": "Jumlah"}, text="jumlah")
                 fig.update_traces(marker_color="#F97316", textposition="outside", cliponaxis=False)
-                st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True)
+                st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True, config=PLOTLY_CONFIG)
         show_cols = [c for c in ["duplicate_group_id", "tanggal", "stasiun", "max", "critical", "categori", "duplicate_type", "dedup_action", "used_for_main_dashboard_kpi"] if c in audit_df.columns]
         audit_table = audit_df[show_cols].rename(columns={
             "duplicate_group_id": "ID Grup Duplikasi",

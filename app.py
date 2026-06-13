@@ -97,6 +97,42 @@ PAGE_PURPOSE = {
     "Data Quality / Audit Trail": "Kepercayaan data, batasan interpretasi, dan jejak validasi.",
 }
 
+# Koordinat aproksimasi titik SPKU untuk visualisasi peta.
+# Peta digunakan sebagai konteks lokasi stasiun pemantau, bukan sebagai
+# interpolasi/pewarnaan seluruh wilayah Jakarta.
+STATION_COORDINATES = {
+    "DKI1": {
+        "lat": -6.19445,
+        "lon": 106.82310,
+        "lokasi_ringkas": "Bundaran HI",
+        "wilayah": "Jakarta Pusat",
+    },
+    "DKI2": {
+        "lat": -6.16035,
+        "lon": 106.90445,
+        "lokasi_ringkas": "Kelapa Gading",
+        "wilayah": "Jakarta Utara",
+    },
+    "DKI3": {
+        "lat": -6.33410,
+        "lon": 106.82390,
+        "lokasi_ringkas": "Jagakarsa",
+        "wilayah": "Jakarta Selatan",
+    },
+    "DKI4": {
+        "lat": -6.29020,
+        "lon": 106.90520,
+        "lokasi_ringkas": "Lubang Buaya",
+        "wilayah": "Jakarta Timur",
+    },
+    "DKI5": {
+        "lat": -6.20740,
+        "lon": 106.76910,
+        "lokasi_ringkas": "Kebon Jeruk",
+        "wilayah": "Jakarta Barat",
+    },
+}
+
 # =============================================================================
 # CSS
 # =============================================================================
@@ -1488,6 +1524,113 @@ def fig_category_by_year(df: pd.DataFrame, title: str = "Komposisi kategori ISPU
     return fig
 
 
+
+def add_station_coordinates(summary: pd.DataFrame) -> pd.DataFrame:
+    """Attach approximate SPKU coordinates to station summary data."""
+    if summary.empty:
+        return pd.DataFrame()
+    map_df = summary.copy()
+    if "kode" not in map_df.columns:
+        map_df["kode"] = map_df["stasiun"].map(station_code)
+    map_df["lat"] = map_df["kode"].map(lambda kode: STATION_COORDINATES.get(str(kode), {}).get("lat"))
+    map_df["lon"] = map_df["kode"].map(lambda kode: STATION_COORDINATES.get(str(kode), {}).get("lon"))
+    map_df["lokasi_ringkas"] = map_df["kode"].map(lambda kode: STATION_COORDINATES.get(str(kode), {}).get("lokasi_ringkas", "—"))
+    map_df["wilayah"] = map_df["kode"].map(lambda kode: STATION_COORDINATES.get(str(kode), {}).get("wilayah", "—"))
+    map_df = map_df.dropna(subset=["lat", "lon"]).copy()
+    if map_df.empty:
+        return map_df
+    map_df["marker_size"] = 16 + (map_df["persen_tidak_sehat_plus"].fillna(0).clip(lower=0, upper=60) / 60 * 32)
+    map_df["marker_color"] = map_df["status_risiko"].map(lambda x: RISK_COLORS.get(x, "#64748B"))
+    map_df["tooltip"] = (
+        "<b>" + map_df["stasiun"].astype(str) + "</b><br>"
+        + "Wilayah: " + map_df["wilayah"].astype(str) + "<br>"
+        + "Status Risiko: " + map_df["status_risiko"].astype(str) + "<br>"
+        + "Rata-rata ISPU: " + map_df["rata_rata_ispu"].map(lambda v: fmt_float(v, 1)) + "<br>"
+        + "Tidak Sehat+: " + map_df["persen_tidak_sehat_plus"].map(lambda v: fmt_pct(v, 1)) + "<br>"
+        + "Kategori Dominan: " + map_df["kategori_dominan"].astype(str) + "<br>"
+        + "Pencemar Dominan: " + map_df["pencemar_dominan"].astype(str) + "<br>"
+        + "Observasi aktif: " + map_df["observasi"].map(fmt_int)
+    )
+    return map_df
+
+
+def fig_station_map(summary: pd.DataFrame) -> go.Figure:
+    """Interactive point map for SPKU stations.
+
+    Methodological guardrail: this is a point map of monitoring stations. It does
+    not color all Jakarta administrative areas and does not interpolate pollution
+    between stations.
+    """
+    map_df = add_station_coordinates(summary)
+    fig = go.Figure()
+    if map_df.empty:
+        fig.update_layout(
+            title="Peta titik SPKU Jakarta",
+            annotations=[dict(text="Koordinat stasiun tidak tersedia", showarrow=False, x=0.5, y=0.5)],
+            height=500,
+        )
+        return apply_fig_style(fig, height=500, legend=False)
+
+    # Keep a consistent legend order for easier decision reading.
+    ordered_status = ["Prioritas Tinggi", "Prioritas Menengah", "Prioritas Pemantauan", "Tidak Ada Data"]
+    for status in ordered_status:
+        g = map_df[map_df["status_risiko"].eq(status)]
+        if g.empty:
+            continue
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=g["lat"],
+                lon=g["lon"],
+                mode="markers+text",
+                name=status,
+                text=g["kode"],
+                textposition="top center",
+                textfont=dict(color="#102033", size=13, family="Inter, Arial, sans-serif"),
+                marker=dict(
+                    size=g["marker_size"],
+                    color=RISK_COLORS.get(status, "#64748B"),
+                    opacity=0.86,
+                ),
+                customdata=np.stack(
+                    [
+                        g["tooltip"],
+                    ],
+                    axis=-1,
+                ),
+                hovertemplate="%{customdata[0]}<extra></extra>",
+            )
+        )
+
+    fig.update_layout(
+        title="Peta titik SPKU Jakarta berdasarkan risiko Tidak Sehat+",
+        height=540,
+        margin=dict(t=88, r=20, b=78, l=20),
+        font=dict(family="Inter, Arial, sans-serif", color="#102033", size=12),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0)",
+        mapbox=dict(
+            style="carto-positron",
+            center=dict(lat=-6.245, lon=106.835),
+            zoom=9.65,
+            bearing=0,
+            pitch=0,
+        ),
+        legend=dict(
+            title=dict(text="Status risiko", font=dict(color="#102033", size=12)),
+            orientation="h",
+            yanchor="top",
+            y=-0.03,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0.92)",
+            bordercolor="rgba(15,23,42,0.12)",
+            borderwidth=1,
+            font=dict(color="#102033", size=12),
+        ),
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="rgba(15,23,42,.22)", font_color="#102033"),
+    )
+    return fig
+
 def fig_station_risk_bar(summary: pd.DataFrame, title: str = "Ranking risiko per stasiun") -> go.Figure:
     plot_df = summary.sort_values("persen_tidak_sehat_plus", ascending=True).copy()
     plot_df["label"] = plot_df["persen_tidak_sehat_plus"].round(1).astype(str) + "%"
@@ -1953,6 +2096,25 @@ def page_station(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         kpi_card("Stasiun risiko terendah", station_code(bottom["stasiun"]), note=bottom["stasiun"], accent="#00A676")
     with c4:
         kpi_card("Kesenjangan risiko", fmt_pct(gap, 1), note="selisih tertinggi vs terendah", accent="#F4B400")
+
+    section_title("Peta Interaktif SPKU Jakarta")
+    page_brief(
+        "Catatan peta",
+        "Peta menampilkan titik stasiun pemantau kualitas udara. Warna marker menunjukkan status risiko, ukuran marker menunjukkan frekuensi Tidak Sehat+. Peta ini bukan pewarnaan seluruh wilayah Jakarta dan tidak melakukan interpolasi sebaran polusi.",
+    )
+    map_left, map_right = st.columns([1.55, 0.85])
+    with map_left:
+        st.plotly_chart(fig_station_map(summary), use_container_width=True, config=PLOTLY_CONFIG)
+    with map_right:
+        insight_panel(
+            "Lokasi prioritas pada peta",
+            f"Titik <b>{top['stasiun']}</b> menjadi prioritas karena memiliki frekuensi Tidak Sehat+ tertinggi sebesar <b>{fmt_pct(top['persen_tidak_sehat_plus'], 1)}</b> pada filter aktif. Marker pada peta hanya merepresentasikan lokasi SPKU, sehingga arahan kebijakan tetap perlu dikombinasikan dengan validasi lapangan dan data sumber emisi sekitar stasiun.",
+        )
+        insight_panel(
+            "Guardrail interpretasi",
+            "Jangan membaca warna marker sebagai kondisi seluruh kecamatan/kota administratif. Warna hanya menunjukkan ringkasan risiko pada titik SPKU yang tersedia di dataset.",
+            kind="warning",
+        )
 
     section_title("Perbandingan risiko antar SPKU")
     left, right = st.columns([1, 1.05])

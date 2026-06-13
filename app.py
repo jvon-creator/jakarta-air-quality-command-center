@@ -34,37 +34,37 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Jakarta Air Quality Command Center"
+APP_TITLE = "Jakarta Air Quality Observatory"
 APP_SUBTITLE = (
-    "Dashboard eksekutif untuk membaca kondisi terkini, arah tren, lokasi prioritas, "
-    "pencemar dominan, periode rawan, dan kualitas data ISPU DKI Jakarta."
+    "Membaca napas kota melalui data ISPU: kondisi terkini, risiko kesehatan, "
+    "lokasi prioritas, pencemar dominan, periode rawan, dan jejak kualitas data."
 )
 
 CATEGORY_ORDER = ["BAIK", "SEDANG", "TIDAK SEHAT", "SANGAT TIDAK SEHAT", "BERBAHAYA"]
 CATEGORY_COLORS = {
-    "BAIK": "#39D98A",
-    "SEDANG": "#F7C948",
-    "TIDAK SEHAT": "#FF8A3D",
-    "SANGAT TIDAK SEHAT": "#EF4444",
-    "BERBAHAYA": "#A855F7",
+    "BAIK": "#7FE7C4",
+    "SEDANG": "#F6C85F",
+    "TIDAK SEHAT": "#F48B4A",
+    "SANGAT TIDAK SEHAT": "#F15B5B",
+    "BERBAHAYA": "#A99CFF",
     "TIDAK ADA DATA": "#64748B",
     "LAINNYA": "#94A3B8",
 }
 
 CRITICAL_COLORS = {
-    "PM10": "#56CCF2",
-    "PM25": "#3BE7A4",
-    "SO2": "#F7C948",
-    "CO": "#FF8A3D",
-    "O3": "#A78BFA",
-    "NO2": "#F472B6",
+    "PM10": "#7DD3FC",
+    "PM25": "#7FE7C4",
+    "SO2": "#F6C85F",
+    "CO": "#F48B4A",
+    "O3": "#A99CFF",
+    "NO2": "#F68BB6",
     "LAINNYA": "#94A3B8",
 }
 
 RISK_COLORS = {
-    "Prioritas Tinggi": "#EF4444",
+    "Prioritas Tinggi": "#F15B5B",
     "Prioritas Menengah": "#F59E0B",
-    "Prioritas Pemantauan": "#39D98A",
+    "Prioritas Pemantauan": "#7FE7C4",
     "Tidak Ada Data": "#64748B",
 }
 
@@ -89,22 +89,25 @@ MENU_ITEMS = [
 
 CUSTOM_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
 :root {
-    --bg: #07111f;
-    --panel: rgba(14, 27, 45, 0.86);
-    --panel-2: rgba(18, 34, 56, 0.74);
-    --line: rgba(148, 163, 184, 0.18);
-    --text: #eaf2ff;
-    --muted: #94a3b8;
-    --soft: #cbd5e1;
-    --teal: #3be7a4;
-    --gold: #f7c948;
-    --cyan: #38bdf8;
-    --coral: #ff8a3d;
-    --red: #ef4444;
-    --violet: #a855f7;
+    --night: #061923;
+    --deep: #082230;
+    --mist: rgba(226, 246, 255, 0.10);
+    --panel: rgba(11, 35, 48, 0.76);
+    --panel-2: rgba(14, 45, 58, 0.58);
+    --line: rgba(166, 223, 238, 0.18);
+    --text: #EAFBFF;
+    --muted: #A7C6D1;
+    --soft: #D6EEF5;
+    --oxygen: #7FE7C4;
+    --sky: #7DD3FC;
+    --haze: #F6C85F;
+    --dust: #F48B4A;
+    --alert: #F15B5B;
+    --violet: #A99CFF;
+    --ink: #03121A;
 }
 
 html, body, [class*="css"] {
@@ -112,94 +115,129 @@ html, body, [class*="css"] {
 }
 
 .stApp {
+    position: relative;
     color: var(--text);
     background:
-        radial-gradient(circle at 14% 4%, rgba(59,231,164,0.16), transparent 32%),
-        radial-gradient(circle at 84% 0%, rgba(56,189,248,0.14), transparent 27%),
-        linear-gradient(180deg, #06101d 0%, #07111f 42%, #091522 100%);
+        radial-gradient(circle at 17% -6%, rgba(127, 231, 196, 0.26), transparent 28%),
+        radial-gradient(circle at 82% 6%, rgba(125, 211, 252, 0.22), transparent 30%),
+        radial-gradient(circle at 80% 78%, rgba(244, 139, 74, 0.12), transparent 24%),
+        linear-gradient(180deg, #061923 0%, #082230 45%, #0b2b37 100%);
+    overflow-x: hidden;
 }
+
+/* Signature visual: atmospheric contour and particulate layer, not a generic dashboard background. */
+.stApp::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 24% 22%, rgba(234, 251, 255, 0.09) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 77% 38%, rgba(246, 200, 95, 0.10) 0 1.2px, transparent 1.9px),
+        linear-gradient(108deg, transparent 0%, rgba(127,231,196,.08) 28%, transparent 46%, rgba(125,211,252,.07) 64%, transparent 100%);
+    background-size: 42px 42px, 56px 56px, 100% 100%;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,.85), rgba(0,0,0,.42) 46%, rgba(0,0,0,.8));
+}
+.stApp::after {
+    content: "";
+    position: fixed;
+    left: -12vw;
+    right: -12vw;
+    top: 132px;
+    height: 280px;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .42;
+    background:
+        repeating-linear-gradient(170deg,
+            transparent 0 22px,
+            rgba(226,246,255,.07) 23px 24px,
+            transparent 25px 52px);
+    filter: blur(.15px);
+    transform: rotate(-2deg);
+}
+
+.block-container, [data-testid="stSidebar"] { position: relative; z-index: 1; }
 
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, rgba(6,16,29,.98), rgba(9,21,34,.98));
-    border-right: 1px solid rgba(148,163,184,.18);
+    background:
+        radial-gradient(circle at top left, rgba(127,231,196,.15), transparent 38%),
+        linear-gradient(180deg, rgba(5,19,28,.98), rgba(7,34,45,.98));
+    border-right: 1px solid rgba(166,223,238,.22);
+    box-shadow: 18px 0 60px rgba(0,0,0,.24);
 }
-
-[data-testid="stSidebar"] * {
-    color: #eaf2ff;
-}
+[data-testid="stSidebar"] * { color: #EAFBFF; }
 
 .block-container {
-    padding-top: 1.15rem;
+    padding-top: 1.05rem;
     padding-bottom: 3rem;
-    max-width: 1500px;
+    max-width: 1520px;
 }
 
 h1, h2, h3, h4 {
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-    letter-spacing: -0.035em;
+    font-family: 'Barlow Condensed', 'Inter', system-ui, sans-serif;
+    letter-spacing: .005em;
     color: var(--text) !important;
 }
-
-p, li, span, label, div {
-    color: inherit;
-}
-
+p, li, span, label, div { color: inherit; }
 hr {
     border: none;
-    border-top: 1px solid rgba(148,163,184,.14);
+    border-top: 1px solid rgba(166,223,238,.16);
     margin: 1.3rem 0;
 }
 
 .command-hero {
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(148,163,184,.20);
-    border-radius: 28px;
-    padding: 28px 30px 26px 30px;
+    border: 1px solid rgba(166,223,238,.25);
+    border-radius: 34px;
+    padding: 30px 32px 28px 32px;
     background:
-        linear-gradient(130deg, rgba(14,27,45,.94), rgba(18,34,56,.77)),
-        radial-gradient(circle at 96% 12%, rgba(59,231,164,.25), transparent 20%),
-        radial-gradient(circle at 70% 78%, rgba(247,201,72,.10), transparent 27%);
-    box-shadow: 0 24px 80px rgba(0,0,0,.38);
+        linear-gradient(135deg, rgba(8,34,48,.92), rgba(13,54,65,.72)),
+        radial-gradient(circle at 10% 12%, rgba(127,231,196,.20), transparent 28%),
+        radial-gradient(circle at 92% 18%, rgba(125,211,252,.18), transparent 32%),
+        radial-gradient(circle at 74% 85%, rgba(246,200,95,.14), transparent 26%);
+    box-shadow: 0 30px 96px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
 }
 .command-hero::before {
     content: "";
     position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(255,255,255,0.032) 1px, transparent 1px);
-    background-size: 42px 42px;
-    mask-image: linear-gradient(90deg, black, transparent 82%);
-    opacity: .45;
+    left: -10%;
+    right: -10%;
+    bottom: -28px;
+    height: 118px;
+    background:
+        linear-gradient(90deg,
+            rgba(127,231,196,.20) 0%,
+            rgba(125,211,252,.18) 28%,
+            rgba(246,200,95,.18) 50%,
+            rgba(244,139,74,.18) 70%,
+            rgba(241,91,91,.16) 86%,
+            rgba(169,156,255,.18) 100%);
+    filter: blur(24px);
+    opacity: .95;
     pointer-events: none;
 }
 .command-hero::after {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 180px;
-    left: -220px;
-    background: linear-gradient(90deg, transparent, rgba(59,231,164,.16), transparent);
-    transform: skewX(-18deg);
-    animation: scan 7s ease-in-out infinite;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 78% 16%, rgba(234,251,255,.20) 0 1px, transparent 1.8px),
+        radial-gradient(ellipse at 68% 58%, rgba(246,200,95,.16) 0 1px, transparent 2px),
+        repeating-linear-gradient(12deg, transparent 0 18px, rgba(234,251,255,.045) 19px 20px, transparent 21px 44px);
+    background-size: 38px 38px, 54px 54px, 100% 100%;
+    mask-image: linear-gradient(90deg, rgba(0,0,0,.78), transparent 84%);
+    opacity: .72;
     pointer-events: none;
 }
-@keyframes scan {
-    0% { left: -220px; opacity: 0; }
-    18% { opacity: .75; }
-    55% { left: calc(100% + 80px); opacity: .1; }
-    100% { left: calc(100% + 80px); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .command-hero::after { animation: none; }
-}
+
 .hero-grid {
     position: relative;
     z-index: 2;
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 24px;
     align-items: end;
 }
@@ -207,54 +245,73 @@ hr {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #3be7a4;
+    color: var(--oxygen);
     text-transform: uppercase;
-    font-size: .76rem;
-    font-weight: 800;
-    letter-spacing: .13em;
-    margin-bottom: 10px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    margin-bottom: 12px;
+}
+.hero-eyebrow::before {
+    content: "";
+    width: 34px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--oxygen), var(--sky), var(--haze), var(--dust), var(--alert), var(--violet));
+    box-shadow: 0 0 26px rgba(127,231,196,.32);
 }
 .hero-title {
-    font-size: clamp(2rem, 3.4vw, 4.15rem);
-    line-height: .94;
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    font-size: clamp(2.55rem, 4.9vw, 5.85rem);
+    line-height: .84;
+    letter-spacing: .012em;
+    text-transform: uppercase;
     margin: 0;
-    max-width: 930px;
+    max-width: 980px;
+    text-wrap: balance;
 }
 .hero-copy {
-    margin-top: 16px;
-    color: #cbd5e1;
-    max-width: 860px;
+    margin-top: 18px;
+    color: #CDE8EF;
+    max-width: 870px;
     font-size: 1.02rem;
-    line-height: 1.65;
+    line-height: 1.72;
 }
 .hero-meta {
-    min-width: 265px;
-    border: 1px solid rgba(148,163,184,.18);
-    border-radius: 22px;
-    background: rgba(7,17,31,.54);
-    padding: 16px 18px;
+    min-width: 292px;
+    border: 1px solid rgba(166,223,238,.20);
+    border-radius: 26px;
+    background:
+        linear-gradient(180deg, rgba(234,251,255,.09), rgba(234,251,255,.035)),
+        rgba(4,18,27,.40);
+    backdrop-filter: blur(18px);
+    padding: 18px 19px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
 }
 .hero-meta .label {
-    color: #94a3b8;
-    font-size: .74rem;
-    letter-spacing: .10em;
+    color: #A7C6D1;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .70rem;
+    letter-spacing: .12em;
     text-transform: uppercase;
-    font-weight: 800;
+    font-weight: 700;
 }
 .hero-meta .value {
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 1.08rem;
-    color: #eaf2ff;
-    margin-top: 4px;
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    font-size: 1.32rem;
+    line-height: 1.08;
+    color: #EAFBFF;
+    margin-top: 7px;
 }
 .hero-meta .status {
     display: inline-flex;
-    margin-top: 12px;
-    padding: 7px 10px;
+    margin-top: 13px;
+    padding: 8px 11px;
     border-radius: 999px;
-    border: 1px solid rgba(59,231,164,.32);
-    color: #3be7a4;
-    background: rgba(59,231,164,.08);
+    border: 1px solid rgba(127,231,196,.36);
+    color: #BFF9E8;
+    background: rgba(127,231,196,.10);
     font-weight: 800;
     font-size: .78rem;
 }
@@ -262,177 +319,232 @@ hr {
 .section-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin: 1.45rem 0 .75rem 0;
+    gap: 12px;
+    margin: 1.55rem 0 .80rem 0;
 }
 .section-title .bar {
-    width: 6px;
-    height: 24px;
+    width: 42px;
+    height: 12px;
     border-radius: 999px;
-    background: linear-gradient(180deg, var(--teal), var(--gold));
-    box-shadow: 0 0 18px rgba(59,231,164,.35);
+    background: linear-gradient(90deg, var(--oxygen), var(--sky), var(--haze));
+    box-shadow: 0 0 24px rgba(127,231,196,.30);
 }
 .section-title h3 {
     margin: 0;
-    font-size: 1.24rem;
+    font-size: 1.48rem;
+    text-transform: uppercase;
+    letter-spacing: .018em;
 }
 
 .kpi-card {
     position: relative;
-    min-height: 139px;
-    padding: 18px 18px 16px 18px;
-    border: 1px solid rgba(148,163,184,.16);
-    border-radius: 24px;
+    min-height: 145px;
+    padding: 19px 18px 17px 18px;
+    border: 1px solid rgba(166,223,238,.18);
+    border-radius: 28px;
     background:
-        linear-gradient(145deg, rgba(18,34,56,.88), rgba(10,22,38,.78)),
-        radial-gradient(circle at 0% 0%, rgba(59,231,164,.12), transparent 48%);
-    box-shadow: 0 18px 48px rgba(0,0,0,.28);
+        linear-gradient(160deg, rgba(234,251,255,.10), rgba(234,251,255,.035) 38%, rgba(7,30,42,.64)),
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--accent, #7FE7C4) 20%, transparent), transparent 45%);
+    box-shadow: 0 20px 58px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.08);
     overflow: hidden;
+    backdrop-filter: blur(15px);
+}
+.kpi-card::before {
+    content:"";
+    position: absolute;
+    right: -28px;
+    top: -38px;
+    width: 122px;
+    height: 122px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent, #7FE7C4) 18%, transparent);
+    filter: blur(16px);
+    opacity: .95;
 }
 .kpi-card::after {
     content:"";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--accent, #3be7a4), transparent 70%);
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(90deg, var(--accent, #7FE7C4), rgba(234,251,255,.14));
 }
 .kpi-label {
-    color: #94a3b8;
-    font-size: .76rem;
-    font-weight: 800;
-    letter-spacing: .08em;
+    color: #A7C6D1;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .70rem;
+    font-weight: 700;
+    letter-spacing: .09em;
     text-transform: uppercase;
 }
 .kpi-value {
+    position: relative;
+    z-index: 1;
     margin-top: 10px;
-    color: #f8fafc;
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: clamp(1.55rem, 2vw, 2.25rem);
+    color: #F4FDFF;
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    font-size: clamp(1.80rem, 2.35vw, 2.65rem);
     font-weight: 800;
-    line-height: 1.04;
+    line-height: .95;
+    letter-spacing: .01em;
 }
 .kpi-delta {
+    position: relative;
+    z-index: 1;
     margin-top: 12px;
     display: inline-flex;
     align-items: center;
     padding: 6px 9px;
     border-radius: 999px;
-    background: rgba(148,163,184,.10);
-    color: #cbd5e1;
+    background: rgba(234,251,255,.08);
+    border: 1px solid rgba(166,223,238,.14);
+    color: #D6EEF5;
     font-size: .78rem;
     font-weight: 700;
 }
 .kpi-note {
+    position: relative;
+    z-index: 1;
     margin-top: 10px;
-    color: #94a3b8;
-    font-size: .78rem;
-    line-height: 1.35;
+    color: #A7C6D1;
+    font-size: .79rem;
+    line-height: 1.36;
 }
 
 .glass-panel {
-    border: 1px solid rgba(148,163,184,.16);
-    border-radius: 26px;
-    background: rgba(14,27,45,.72);
-    box-shadow: 0 20px 64px rgba(0,0,0,.26);
+    border: 1px solid rgba(166,223,238,.17);
+    border-radius: 30px;
+    background:
+        linear-gradient(180deg, rgba(234,251,255,.075), rgba(234,251,255,.035)),
+        rgba(7,30,42,.58);
+    box-shadow: 0 22px 72px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.07);
+    backdrop-filter: blur(16px);
     padding: 18px;
     margin-bottom: 1rem;
 }
 .insight-panel {
-    border: 1px solid rgba(59,231,164,.22);
-    border-left: 5px solid #3be7a4;
-    border-radius: 22px;
-    background: linear-gradient(135deg, rgba(59,231,164,.10), rgba(14,27,45,.74));
-    padding: 18px 20px;
-    margin: 1.05rem 0;
+    position: relative;
+    border: 1px solid rgba(127,231,196,.28);
+    border-left: 0;
+    border-radius: 26px;
+    background:
+        linear-gradient(135deg, rgba(127,231,196,.12), rgba(8,34,48,.72)),
+        radial-gradient(circle at top right, rgba(125,211,252,.10), transparent 34%);
+    padding: 18px 20px 18px 24px;
+    margin: 1.08rem 0;
+    overflow: hidden;
+}
+.insight-panel::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 6px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--oxygen), var(--sky));
+    box-shadow: 0 0 20px rgba(127,231,196,.40);
 }
 .insight-title {
-    color: #3be7a4;
-    font-weight: 900;
-    letter-spacing: .08em;
+    color: #BFF9E8;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 800;
+    letter-spacing: .10em;
     text-transform: uppercase;
-    font-size: .76rem;
+    font-size: .72rem;
     margin-bottom: 8px;
 }
 .insight-panel p {
-    color: #dbeafe;
+    color: #E4F7FB;
     margin: 0;
-    line-height: 1.65;
+    line-height: 1.66;
 }
 .warning-panel {
-    border: 1px solid rgba(247,201,72,.24);
-    border-left: 5px solid #f7c948;
-    border-radius: 22px;
-    background: linear-gradient(135deg, rgba(247,201,72,.10), rgba(14,27,45,.76));
+    border: 1px solid rgba(246,200,95,.28);
+    border-left: 6px solid var(--haze);
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(246,200,95,.13), rgba(8,34,48,.74));
     padding: 16px 18px;
     margin: 1rem 0;
 }
-.warning-panel p { margin: 0; color: #f8fafc; line-height: 1.55; }
+.warning-panel p { margin: 0; color: #FFF8E1; line-height: 1.58; }
 
 .pill-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin: 8px 0 2px 0;
+    gap: 9px;
+    margin: 12px 0 2px 0;
 }
 .pill {
     display: inline-flex;
     align-items: center;
-    padding: 7px 10px;
+    padding: 8px 11px;
     border-radius: 999px;
-    background: rgba(148,163,184,.10);
-    border: 1px solid rgba(148,163,184,.16);
-    color: #cbd5e1;
-    font-size: .78rem;
-    font-weight: 800;
+    background: rgba(234,251,255,.08);
+    border: 1px solid rgba(166,223,238,.17);
+    color: #D6EEF5;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .72rem;
+    font-weight: 700;
 }
 
 .small-muted {
-    color: #94a3b8;
+    color: #A7C6D1;
     font-size: .84rem;
     line-height: 1.5;
 }
 
 [data-testid="stMetric"] {
-    background: rgba(14,27,45,.62);
-    border: 1px solid rgba(148,163,184,.15);
+    background: rgba(7,30,42,.58);
+    border: 1px solid rgba(166,223,238,.16);
     border-radius: 20px;
     padding: 14px 16px;
 }
-
 [data-testid="stDataFrame"] {
-    border: 1px solid rgba(148,163,184,.14);
+    border: 1px solid rgba(166,223,238,.14);
     border-radius: 18px;
     overflow: hidden;
 }
-
 .stButton button, .stDownloadButton button {
-    border-radius: 14px !important;
-    border: 1px solid rgba(59,231,164,.32) !important;
-    background: linear-gradient(135deg, rgba(59,231,164,.18), rgba(56,189,248,.12)) !important;
-    color: #eaf2ff !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(127,231,196,.36) !important;
+    background: linear-gradient(135deg, rgba(127,231,196,.20), rgba(125,211,252,.13)) !important;
+    color: #EAFBFF !important;
     font-weight: 800 !important;
+    box-shadow: 0 12px 28px rgba(0,0,0,.18) !important;
 }
-
+.stButton button:hover, .stDownloadButton button:hover {
+    border-color: rgba(246,200,95,.48) !important;
+    box-shadow: 0 14px 34px rgba(127,231,196,.10) !important;
+}
 div[data-baseweb="select"] > div,
 div[data-baseweb="input"] > div,
 div[data-baseweb="base-input"] {
-    background-color: rgba(14,27,45,.82) !important;
-    border-color: rgba(148,163,184,.22) !important;
+    background-color: rgba(7,30,42,.82) !important;
+    border-color: rgba(166,223,238,.24) !important;
 }
+.stRadio [role="radiogroup"] { gap: 0.45rem; }
+.stRadio label, .stCheckbox label { color: #D6EEF5 !important; }
 
-.stRadio [role="radiogroup"] {
-    gap: 0.45rem;
+/* Make Streamlit tabs and expanders feel like sensor panes. */
+button[data-baseweb="tab"] {
+    font-weight: 800 !important;
+    color: #A7C6D1 !important;
 }
-
-.stRadio label, .stCheckbox label {
-    color: #dbeafe !important;
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #EAFBFF !important;
+}
+.streamlit-expanderHeader {
+    font-weight: 800 !important;
+    color: #EAFBFF !important;
 }
 
 @media (max-width: 980px) {
     .hero-grid { grid-template-columns: 1fr; }
     .hero-meta { min-width: unset; }
+    .command-hero { padding: 24px 22px; border-radius: 26px; }
 }
 </style>
 """
@@ -662,7 +774,7 @@ def calc_category_from_ispu(value: float | None) -> str:
     return ispu_status_from_average(value)
 
 
-def kpi_card(label: str, value: str, delta: str = "", note: str = "", accent: str = "#3BE7A4") -> None:
+def kpi_card(label: str, value: str, delta: str = "", note: str = "", accent: str = "#7FE7C4") -> None:
     delta_html = f'<div class="kpi-delta">{delta}</div>' if delta else ""
     note_html = f'<div class="kpi-note">{note}</div>' if note else ""
     st.markdown(
@@ -710,10 +822,10 @@ def apply_fig_style(fig: go.Figure, height: Optional[int] = None, legend: bool =
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, Arial, sans-serif", color="#EAF2FF", size=12),
-        title_font=dict(family="Space Grotesk, Inter, sans-serif", color="#F8FAFC", size=18),
+        font=dict(family="Inter, Arial, sans-serif", color="#EAFBFF", size=12),
+        title_font=dict(family="Barlow Condensed, Inter, sans-serif", color="#F4FDFF", size=20),
         margin=dict(t=52, r=24, b=42, l=32),
-        hoverlabel=dict(bgcolor="#0E1B2D", bordercolor="rgba(148,163,184,.35)", font_color="#EAF2FF"),
+        hoverlabel=dict(bgcolor="#082230", bordercolor="rgba(166,223,238,.38)", font_color="#EAFBFF"),
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -721,30 +833,30 @@ def apply_fig_style(fig: go.Figure, height: Optional[int] = None, legend: bool =
             xanchor="left",
             x=0,
             bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#CBD5E1"),
+            font=dict(color="#D6EEF5"),
         ) if legend else dict(visible=False),
     )
     if height:
         fig.update_layout(height=height)
     fig.update_xaxes(
         showgrid=False,
-        linecolor="rgba(148,163,184,.22)",
-        tickfont=dict(color="#CBD5E1"),
-        title_font=dict(color="#CBD5E1"),
+        linecolor="rgba(166,223,238,.24)",
+        tickfont=dict(color="#D6EEF5"),
+        title_font=dict(color="#D6EEF5"),
     )
     fig.update_yaxes(
-        gridcolor="rgba(148,163,184,.12)",
-        zerolinecolor="rgba(148,163,184,.18)",
-        tickfont=dict(color="#CBD5E1"),
-        title_font=dict(color="#CBD5E1"),
+        gridcolor="rgba(166,223,238,.13)",
+        zerolinecolor="rgba(166,223,238,.18)",
+        tickfont=dict(color="#D6EEF5"),
+        title_font=dict(color="#D6EEF5"),
     )
     return fig
 
 
 def add_threshold_lines(fig: go.Figure, include_all: bool = False) -> go.Figure:
-    thresholds = [(101, "Ambang Tidak Sehat 101", "#FF8A3D")]
+    thresholds = [(101, "Ambang Tidak Sehat 101", "#F48B4A")]
     if include_all:
-        thresholds.extend([(201, "Sangat Tidak Sehat 201", "#EF4444"), (301, "Berbahaya 301", "#A855F7")])
+        thresholds.extend([(201, "Sangat Tidak Sehat 201", "#F15B5B"), (301, "Berbahaya 301", "#A99CFF")])
     for y, label, color in thresholds:
         fig.add_hline(
             y=y,
@@ -853,12 +965,12 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
         <div class="command-hero">
             <div class="hero-grid">
                 <div>
-                    <div class="hero-eyebrow">ISPU DKI Jakarta · {current_page}</div>
+                    <div class="hero-eyebrow">Kualitas Udara DKI Jakarta · {current_page}</div>
                     <h1 class="hero-title">{APP_TITLE}</h1>
                     <div class="hero-copy">{APP_SUBTITLE}</div>
                     <div class="pill-row">
-                        <div class="pill">Threshold utama: ISPU 101</div>
-                        <div class="pill">Metrik risiko: % Tidak Sehat+</div>
+                        <div class="pill">Batas napas sehat: ISPU 101</div>
+                        <div class="pill">Sinyal risiko: % Tidak Sehat+</div>
                         <div class="pill">{filtered_hint}</div>
                     </div>
                 </div>
@@ -887,7 +999,7 @@ def empty_state() -> None:
 
 def build_sidebar(df: pd.DataFrame) -> tuple[str, pd.DataFrame, dict]:
     with st.sidebar:
-        st.markdown("### Command Panel")
+        st.markdown("### Panel Pemantauan Udara")
         page = st.radio("Pilih dashboard", MENU_ITEMS, index=0)
 
         st.markdown("---")
@@ -1133,10 +1245,10 @@ def fig_station_bubble(summary: pd.DataFrame, title: str = "Peta prioritas stasi
         x=101,
         line_dash="dash",
         line_width=1.5,
-        line_color="#FF8A3D",
+        line_color="#F48B4A",
         annotation_text="Ambang rata-rata ISPU 101",
         annotation_position="top",
-        annotation_font_color="#FF8A3D",
+        annotation_font_color="#F48B4A",
         annotation_font_size=11,
     )
     return apply_fig_style(fig, height=460)
@@ -1240,7 +1352,7 @@ def fig_critical_heatmap(df: pd.DataFrame) -> go.Figure:
     fig = px.imshow(
         pivot,
         aspect="auto",
-        color_continuous_scale=["#0B1728", "#38BDF8", "#F7C948", "#EF4444"],
+        color_continuous_scale=["#061923", "#7DD3FC", "#F6C85F", "#F15B5B"],
         title="Heatmap frekuensi pencemar kritis · stasiun × parameter",
         labels=dict(x="Pencemar", y="Stasiun", color="Jumlah"),
     )
@@ -1252,11 +1364,11 @@ def fig_seasonal_heatmap(df: pd.DataFrame, metric: str) -> go.Figure:
     if metric == "Rata-rata ISPU":
         data = df.groupby(["tahun", "nama_bulan"], observed=True).agg(nilai=("max", "mean")).reset_index()
         color_label = "Rata-rata ISPU"
-        scale = ["#0B1728", "#1D4ED8", "#F7C948", "#FF8A3D", "#EF4444"]
+        scale = ["#061923", "#2B8BC5", "#F6C85F", "#F48B4A", "#F15B5B"]
     else:
         data = df.groupby(["tahun", "nama_bulan"], observed=True).agg(nilai=("flag_tidak_sehat_plus", lambda s: pct_true(s))).reset_index()
         color_label = "% Tidak Sehat+"
-        scale = ["#0B1728", "#39D98A", "#F7C948", "#FF8A3D", "#EF4444"]
+        scale = ["#061923", "#7FE7C4", "#F6C85F", "#F48B4A", "#F15B5B"]
 
     data["nama_bulan"] = pd.Categorical(data["nama_bulan"], categories=MONTH_ORDER, ordered=True)
     pivot = data.pivot_table(index="tahun", columns="nama_bulan", values="nilai", aggfunc="mean")
@@ -1353,18 +1465,18 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     stations = station_summary(df)
     top_station = stations.iloc[0] if not stations.empty else None
 
-    section_title("Executive pulse")
+    section_title("Napas Kota Terkini")
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
-        kpi_card("Rata-rata ISPU", fmt_float(avg_ispu, 1), note=ispu_status_from_average(avg_ispu), accent=CATEGORY_COLORS.get(ispu_status_from_average(avg_ispu), "#3BE7A4"))
+        kpi_card("Rata-rata ISPU", fmt_float(avg_ispu, 1), note=ispu_status_from_average(avg_ispu), accent=CATEGORY_COLORS.get(ispu_status_from_average(avg_ispu), "#7FE7C4"))
     with c2:
-        kpi_card("Median ISPU", fmt_float(median_ispu, 1), note="kondisi tipikal", accent="#38BDF8")
+        kpi_card("Median ISPU", fmt_float(median_ispu, 1), note="kondisi tipikal", accent="#7DD3FC")
     with c3:
-        kpi_card("Tidak Sehat+", fmt_pct(unhealthy, 1), note="frekuensi risiko", accent="#FF8A3D")
+        kpi_card("Tidak Sehat+", fmt_pct(unhealthy, 1), note="frekuensi risiko", accent="#F48B4A")
     with c4:
         kpi_card("Kategori dominan", top_category, note="paling sering muncul", accent=CATEGORY_COLORS.get(top_category, "#94A3B8"))
     with c5:
-        kpi_card("Stasiun prioritas", station_code(top_station["stasiun"]) if top_station is not None else "—", note=(top_station["stasiun"] if top_station is not None else "—"), accent="#EF4444")
+        kpi_card("Stasiun prioritas", station_code(top_station["stasiun"]) if top_station is not None else "—", note=(top_station["stasiun"] if top_station is not None else "—"), accent="#F15B5B")
 
     section_title("Komposisi risiko dan pencemar utama")
     left, right = st.columns([1.1, 1])
@@ -1433,14 +1545,14 @@ def page_trend(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     cur_avg, prev_avg, delta_avg = previous_year_value(df, max_year, "max", "mean")
     cur_unhealthy, prev_unhealthy, delta_unhealthy = previous_year_value(df, max_year, "flag_tidak_sehat_plus", "pct_true")
 
-    section_title("Kondisi tahun terakhir dalam filter")
+    section_title("Sinyal Terkini Tahun Terakhir")
     k1, k2, k3, k4 = st.columns(4)
     with k1:
-        kpi_card("Tahun terakhir", str(max_year), note="dalam data terfilter", accent="#38BDF8")
+        kpi_card("Tahun terakhir", str(max_year), note="dalam data terfilter", accent="#7DD3FC")
     with k2:
-        kpi_card("Rata-rata ISPU", fmt_float(cur_avg, 1), delta=(f"vs {max_year-1}: {fmt_float(delta_avg,1)}" if not pd.isna(delta_avg) else ""), accent=CATEGORY_COLORS.get(ispu_status_from_average(cur_avg), "#3BE7A4"))
+        kpi_card("Rata-rata ISPU", fmt_float(cur_avg, 1), delta=(f"vs {max_year-1}: {fmt_float(delta_avg,1)}" if not pd.isna(delta_avg) else ""), accent=CATEGORY_COLORS.get(ispu_status_from_average(cur_avg), "#7FE7C4"))
     with k3:
-        kpi_card("Tidak Sehat+", fmt_pct(cur_unhealthy, 1), delta=(f"vs {max_year-1}: {fmt_pct(delta_unhealthy,1)}" if not pd.isna(delta_unhealthy) else ""), accent="#FF8A3D")
+        kpi_card("Tidak Sehat+", fmt_pct(cur_unhealthy, 1), delta=(f"vs {max_year-1}: {fmt_pct(delta_unhealthy,1)}" if not pd.isna(delta_unhealthy) else ""), accent="#F48B4A")
     with k4:
         worst_year_df = (
             df.groupby("tahun")
@@ -1449,7 +1561,7 @@ def page_trend(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
             .sort_values("persen_tidak_sehat_plus", ascending=False)
         )
         worst_year = worst_year_df.iloc[0] if not worst_year_df.empty else None
-        kpi_card("Tahun risiko tertinggi", str(int(worst_year["tahun"])) if worst_year is not None else "—", note=(fmt_pct(worst_year["persen_tidak_sehat_plus"], 1) if worst_year is not None else "—"), accent="#EF4444")
+        kpi_card("Tahun risiko tertinggi", str(int(worst_year["tahun"])) if worst_year is not None else "—", note=(fmt_pct(worst_year["persen_tidak_sehat_plus"], 1) if worst_year is not None else "—"), accent="#F15B5B")
 
     section_title("Tren ISPU dengan ambang Tidak Sehat")
     st.plotly_chart(fig_trend_line(df, granularity, view_mode, include_all_thresholds), use_container_width=True)
@@ -1486,16 +1598,16 @@ def page_station(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     bottom = summary.iloc[-1]
     gap = top["persen_tidak_sehat_plus"] - bottom["persen_tidak_sehat_plus"]
 
-    section_title("Lokasi prioritas")
+    section_title("Peta Risiko Lokasi")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("Stasiun risiko tertinggi", station_code(top["stasiun"]), note=top["stasiun"], accent="#EF4444")
+        kpi_card("Stasiun risiko tertinggi", station_code(top["stasiun"]), note=top["stasiun"], accent="#F15B5B")
     with c2:
-        kpi_card("Tidak Sehat+ tertinggi", fmt_pct(top["persen_tidak_sehat_plus"], 1), note=top["status_risiko"], accent="#FF8A3D")
+        kpi_card("Tidak Sehat+ tertinggi", fmt_pct(top["persen_tidak_sehat_plus"], 1), note=top["status_risiko"], accent="#F48B4A")
     with c3:
-        kpi_card("Stasiun risiko terendah", station_code(bottom["stasiun"]), note=bottom["stasiun"], accent="#39D98A")
+        kpi_card("Stasiun risiko terendah", station_code(bottom["stasiun"]), note=bottom["stasiun"], accent="#7FE7C4")
     with c4:
-        kpi_card("Kesenjangan risiko", fmt_pct(gap, 1), note="selisih tertinggi vs terendah", accent="#F7C948")
+        kpi_card("Kesenjangan risiko", fmt_pct(gap, 1), note="selisih tertinggi vs terendah", accent="#F6C85F")
 
     section_title("Perbandingan risiko antar SPKU")
     left, right = st.columns([1, 1.05])
@@ -1557,16 +1669,16 @@ def page_critical(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     top_crit_unhealthy = mode_or_dash(unhealthy_crit["critical"])
     multi_share = pct_true(crit_df.get("flag_multi_critical", pd.Series(False, index=crit_df.index))) if "flag_multi_critical" in crit_df.columns else 0
 
-    section_title("Fokus pencemar pengendalian")
+    section_title("Jejak Pencemar Dominan")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("Pencemar dominan", top_crit, note=f"{fmt_pct(top_crit_pct, 1)} dari data critical", accent=CRITICAL_COLORS.get(top_crit, "#3BE7A4"))
+        kpi_card("Pencemar dominan", top_crit, note=f"{fmt_pct(top_crit_pct, 1)} dari data critical", accent=CRITICAL_COLORS.get(top_crit, "#7FE7C4"))
     with c2:
-        kpi_card("Critical valid", fmt_int(len(crit_df)), note="observasi dengan critical", accent="#38BDF8")
+        kpi_card("Critical valid", fmt_int(len(crit_df)), note="observasi dengan critical", accent="#7DD3FC")
     with c3:
-        kpi_card("Dominan saat Tidak Sehat+", top_crit_unhealthy, note="khusus risiko tinggi", accent=CRITICAL_COLORS.get(top_crit_unhealthy, "#FF8A3D"))
+        kpi_card("Dominan saat Tidak Sehat+", top_crit_unhealthy, note="khusus risiko tinggi", accent=CRITICAL_COLORS.get(top_crit_unhealthy, "#F48B4A"))
     with c4:
-        kpi_card("Multi-critical", fmt_pct(multi_share, 1), note="kasus pencemar bernilai maksimum sama", accent="#F7C948")
+        kpi_card("Multi-critical", fmt_pct(multi_share, 1), note="kasus pencemar bernilai maksimum sama", accent="#F6C85F")
 
     section_title("Distribusi pencemar kritis")
     left, right = st.columns([1, 1])
@@ -1618,16 +1730,16 @@ def page_seasonal(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     worst_risk = monthly.sort_values("persen_tidak_sehat_plus", ascending=False).iloc[0]
     best_avg = monthly.sort_values("rata_rata_ispu", ascending=True).iloc[0]
 
-    section_title("Kalender risiko musiman")
+    section_title("Kalender Risiko Udara")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("Bulan ISPU tertinggi", str(worst_avg["nama_bulan"]), note=f"Rata-rata {fmt_float(worst_avg['rata_rata_ispu'],1)}", accent="#EF4444")
+        kpi_card("Bulan ISPU tertinggi", str(worst_avg["nama_bulan"]), note=f"Rata-rata {fmt_float(worst_avg['rata_rata_ispu'],1)}", accent="#F15B5B")
     with c2:
-        kpi_card("Bulan Tidak Sehat+ tertinggi", str(worst_risk["nama_bulan"]), note=fmt_pct(worst_risk["persen_tidak_sehat_plus"], 1), accent="#FF8A3D")
+        kpi_card("Bulan Tidak Sehat+ tertinggi", str(worst_risk["nama_bulan"]), note=fmt_pct(worst_risk["persen_tidak_sehat_plus"], 1), accent="#F48B4A")
     with c3:
-        kpi_card("Bulan relatif terbaik", str(best_avg["nama_bulan"]), note=f"Rata-rata {fmt_float(best_avg['rata_rata_ispu'],1)}", accent="#39D98A")
+        kpi_card("Bulan relatif terbaik", str(best_avg["nama_bulan"]), note=f"Rata-rata {fmt_float(best_avg['rata_rata_ispu'],1)}", accent="#7FE7C4")
     with c4:
-        kpi_card("Pencemar bulan rawan", str(worst_risk["pencemar_dominan"]), note=f"pada {worst_risk['nama_bulan']}", accent=CRITICAL_COLORS.get(str(worst_risk["pencemar_dominan"]), "#F7C948"))
+        kpi_card("Pencemar bulan rawan", str(worst_risk["pencemar_dominan"]), note=f"pada {worst_risk['nama_bulan']}", accent=CRITICAL_COLORS.get(str(worst_risk["pencemar_dominan"]), "#F6C85F"))
 
     metric = st.radio("Metrik heatmap", ["Rata-rata ISPU", "% Tidak Sehat+"], horizontal=True, index=0)
     st.plotly_chart(fig_seasonal_heatmap(df, metric), use_container_width=True)
@@ -1699,38 +1811,38 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
     total_audit = len(audit_df) if not audit_df.empty else 0
     validation_issues = int(validation_df["jumlah_baris_bermasalah"].sum()) if not validation_df.empty and "jumlah_baris_bermasalah" in validation_df.columns else 0
     status = "Layak digunakan" if final_dup == 0 and validation_issues == 0 else "Perlu perhatian"
-    status_accent = "#39D98A" if status == "Layak digunakan" else "#F7C948"
+    status_accent = "#7FE7C4" if status == "Layak digunakan" else "#F6C85F"
 
-    section_title("Executive data trust summary")
+    section_title("Kepercayaan Data untuk Keputusan")
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         kpi_card("Status data", status, note="untuk analisis dashboard", accent=status_accent)
     with c2:
-        kpi_card("Periode data", f"{start}<br>{end}", note="bukan real-time", accent="#38BDF8")
+        kpi_card("Periode data", f"{start}<br>{end}", note="bukan real-time", accent="#7DD3FC")
     with c3:
-        kpi_card("Observasi final", fmt_int(total_final), note=f"{fmt_int(total_filtered)} aktif setelah filter", accent="#3BE7A4")
+        kpi_card("Observasi final", fmt_int(total_final), note=f"{fmt_int(total_filtered)} aktif setelah filter", accent="#7FE7C4")
     with c4:
-        kpi_card("Stasiun", fmt_int(total_stations), note="SPKU dalam dataset", accent="#F7C948")
+        kpi_card("Stasiun", fmt_int(total_stations), note="SPKU dalam dataset", accent="#F6C85F")
     with c5:
-        kpi_card("Duplikasi final", fmt_int(final_dup), note=f"audit duplikasi: {fmt_int(total_audit)} baris", accent="#EF4444" if final_dup else "#39D98A")
+        kpi_card("Duplikasi final", fmt_int(final_dup), note=f"audit duplikasi: {fmt_int(total_audit)} baris", accent="#F15B5B" if final_dup else "#7FE7C4")
 
     insight_panel(
         "Makna untuk pengambilan keputusan",
         "Menu ini memastikan angka pada dashboard tidak dibaca secara keliru. Dataset final sudah dibuat unik pada level tanggal-stasiun, hasil validasi akhir ditampilkan, dan data duplikasi dipisahkan ke audit agar tidak menggandakan KPI utama.",
     )
 
-    section_title("Coverage data")
+    section_title("Cakupan Sensor dan Periode")
     col1, col2 = st.columns(2)
     with col1:
         yearly = full_df.groupby("tahun").size().reset_index(name="observasi")
         fig = px.bar(yearly, x="tahun", y="observasi", title="Jumlah observasi per tahun", labels={"tahun": "Tahun", "observasi": "Observasi"})
-        fig.update_traces(marker_color="#38BDF8", text=yearly["observasi"], textposition="outside", cliponaxis=False)
+        fig.update_traces(marker_color="#7DD3FC", text=yearly["observasi"], textposition="outside", cliponaxis=False)
         st.plotly_chart(apply_fig_style(fig, height=380, legend=False), use_container_width=True)
     with col2:
         station_cov = full_df.groupby("stasiun").size().reset_index(name="observasi")
         station_cov["kode"] = station_cov["stasiun"].map(station_code)
         fig = px.bar(station_cov.sort_values("observasi", ascending=True), x="observasi", y="kode", orientation="h", title="Jumlah observasi per stasiun", labels={"observasi": "Observasi", "kode": "Stasiun"}, hover_data={"stasiun": True})
-        fig.update_traces(marker_color="#3BE7A4", text="observasi", textposition="outside", cliponaxis=False)
+        fig.update_traces(marker_color="#7FE7C4", text="observasi", textposition="outside", cliponaxis=False)
         st.plotly_chart(apply_fig_style(fig, height=380, legend=False), use_container_width=True)
 
     section_title("Completeness parameter pencemar")
@@ -1750,7 +1862,7 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
         labels={"tersedia_pct": "Ketersediaan (%)", "parameter": "Parameter"},
         text=missing.sort_values("tersedia_pct")["tersedia_pct"].round(1),
     )
-    fig.update_traces(marker_color="#F7C948", texttemplate="%{text:.1f}%", textposition="outside", cliponaxis=False)
+    fig.update_traces(marker_color="#F6C85F", texttemplate="%{text:.1f}%", textposition="outside", cliponaxis=False)
     fig.update_xaxes(range=[0, 105], ticksuffix="%")
     st.plotly_chart(apply_fig_style(fig, height=420, legend=False), use_container_width=True)
     insight_panel(
@@ -1759,7 +1871,7 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
         kind="warning",
     )
 
-    section_title("Validation result")
+    section_title("Hasil Validasi Akhir")
     if validation_df.empty:
         st.info("File validasi final tidak tersedia.")
     else:
@@ -1772,7 +1884,7 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
             column_config={"Jumlah Baris Bermasalah": st.column_config.NumberColumn(format="%d")},
         )
 
-    section_title("Cleaning log")
+    section_title("Jejak Pembersihan Data")
     if log_df.empty:
         st.info("File cleaning log tidak tersedia.")
     else:
@@ -1788,13 +1900,13 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
             if "dedup_action" in audit_df.columns:
                 act = audit_df.groupby("dedup_action").size().reset_index(name="jumlah")
                 fig = px.bar(act, x="dedup_action", y="jumlah", title="Status penanganan duplikasi", labels={"dedup_action": "Tindakan", "jumlah": "Jumlah"}, text="jumlah")
-                fig.update_traces(marker_color="#A855F7", textposition="outside", cliponaxis=False)
+                fig.update_traces(marker_color="#A99CFF", textposition="outside", cliponaxis=False)
                 st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True)
         with col2:
             if "duplicate_type" in audit_df.columns:
                 typ = audit_df.groupby("duplicate_type").size().reset_index(name="jumlah")
                 fig = px.bar(typ, x="duplicate_type", y="jumlah", title="Jenis duplikasi", labels={"duplicate_type": "Jenis", "jumlah": "Jumlah"}, text="jumlah")
-                fig.update_traces(marker_color="#FF8A3D", textposition="outside", cliponaxis=False)
+                fig.update_traces(marker_color="#F48B4A", textposition="outside", cliponaxis=False)
                 st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True)
         show_cols = [c for c in ["duplicate_group_id", "tanggal", "stasiun", "max", "critical", "categori", "duplicate_type", "dedup_action", "used_for_main_dashboard_kpi"] if c in audit_df.columns]
         st.dataframe(audit_df[show_cols].head(500), use_container_width=True, hide_index=True)

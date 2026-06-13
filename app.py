@@ -293,6 +293,46 @@ div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-base
 div[data-baseweb="select"] *, div[data-baseweb="input"] *, div[data-baseweb="base-input"] * { color: var(--ink) !important; }
 .stRadio [role="radiogroup"] { gap: 0.45rem; }
 .stRadio label, .stCheckbox label { color: var(--ink) !important; }
+
+/* Form control contrast hardening: Streamlit/BaseWeb sometimes injects light text
+   into radio and checkbox labels. Force every label descendant to dark ink so
+   options remain readable on the light air-quality background. */
+[data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"] *,
+[data-testid="stRadio"],
+[data-testid="stRadio"] *,
+[data-testid="stCheckbox"],
+[data-testid="stCheckbox"] * {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] label *,
+[data-testid="stCheckbox"] label,
+[data-testid="stCheckbox"] label * {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    font-weight: 750 !important;
+}
+[data-testid="stRadio"] p,
+[data-testid="stRadio"] span,
+[data-testid="stCheckbox"] p,
+[data-testid="stCheckbox"] span {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+}
+[data-testid="stCheckbox"] div[role="checkbox"],
+[data-testid="stRadio"] div[role="radio"] {
+    color: var(--ink) !important;
+    opacity: 1 !important;
+}
+[data-testid="stCheckbox"] label:hover *,
+[data-testid="stRadio"] label:hover * {
+    color: #075985 !important;
+    -webkit-text-fill-color: #075985 !important;
+}
 button[data-baseweb="tab"] { font-weight: 800 !important; color: var(--slate) !important; }
 button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important; }
 .streamlit-expanderHeader { font-weight: 800 !important; color: var(--ink) !important; }

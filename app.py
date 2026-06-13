@@ -389,6 +389,22 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important;
 .empty-state-panel { border-radius: 24px; padding: 22px; border: 1px dashed rgba(225,29,72,.42); background: #FFFFFF; color: var(--ink) !important; box-shadow: var(--shadow-soft); }
 .empty-state-panel * { color: var(--ink) !important; }
 
+/* Plotly legend/readability hardening: keep legend titles, labels, axes, and chart titles dark on light cards. */
+[data-testid="stPlotlyChart"] .legendtitletext,
+[data-testid="stPlotlyChart"] .legendtext,
+[data-testid="stPlotlyChart"] .gtitle,
+[data-testid="stPlotlyChart"] .xtitle,
+[data-testid="stPlotlyChart"] .ytitle,
+[data-testid="stPlotlyChart"] .xtick text,
+[data-testid="stPlotlyChart"] .ytick text {
+    fill: #102033 !important;
+    color: #102033 !important;
+    opacity: 1 !important;
+}
+[data-testid="stPlotlyChart"] .legendtitletext {
+    font-weight: 900 !important;
+}
+
 /* Readability hardening: anything inside custom panels must stay dark, never pastel-on-pastel. */
 .command-hero *, .kpi-card *, .glass-panel *, .insight-panel *, .warning-panel *, .air-ribbon-wrap *, .page-brief *, .sidebar-purpose * { text-shadow: none !important; }
 
@@ -891,8 +907,10 @@ def apply_fig_style(fig: go.Figure, height: Optional[int] = None, legend: bool =
             y=1.02,
             xanchor="left",
             x=0,
-            bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#334155"),
+            bgcolor="rgba(255,255,255,0)",
+            font=dict(color="#1E3448", size=12),
+            title_font=dict(color="#102033", size=13, family="Inter, Arial, sans-serif"),
+            bordercolor="rgba(15,23,42,0)",
         ) if legend else dict(visible=False),
     )
     if height:
@@ -1375,7 +1393,9 @@ def fig_unhealthy_by_year(df: pd.DataFrame, title: str = "% Tidak Sehat+ per tah
             xanchor="left",
             x=0,
             bgcolor="rgba(255,255,255,0)",
-            font=dict(color="#334155", size=12),
+            font=dict(color="#1E3448", size=12),
+            title_font=dict(color="#102033", size=13, family="Inter, Arial, sans-serif"),
+            bordercolor="rgba(15,23,42,0)",
         ),
     )
     return fig
@@ -1408,7 +1428,9 @@ def fig_category_by_year(df: pd.DataFrame, title: str = "Komposisi kategori ISPU
             xanchor="left",
             x=0,
             bgcolor="rgba(255,255,255,0)",
-            font=dict(color="#334155", size=12),
+            font=dict(color="#1E3448", size=12),
+            title_font=dict(color="#102033", size=13, family="Inter, Arial, sans-serif"),
+            bordercolor="rgba(15,23,42,0)",
         ),
     )
     return fig

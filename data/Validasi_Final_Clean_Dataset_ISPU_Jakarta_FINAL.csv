@@ -1,0 +1,9 @@
+aspek_validasi,jumlah_baris_bermasalah
+Tanggal atau stasiun tidak valid,0
+periode_data tidak konsisten dengan tanggal,0
+max tidak konsisten dengan parameter tertinggi,0
+critical berisi nilai tidak valid,0
+critical tidak termasuk kandidat parameter tertinggi,0
+categori berisi nilai tidak valid,0
+categori tidak sesuai rentang max,0
+Duplikasi kombinasi tanggal dan stasiun,0

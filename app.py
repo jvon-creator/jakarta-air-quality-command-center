@@ -328,6 +328,90 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important;
     .decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 620px) { .decision-grid { grid-template-columns: 1fr; } }
+
+
+/* Light executive tables: replace Streamlit's dark dataframe renderer for decision tables. */
+.light-table-wrap {
+    width: 100%;
+    overflow: auto;
+    border-radius: 22px;
+    border: 1px solid rgba(15, 23, 42, .14);
+    background: rgba(255,255,255,.96);
+    box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,.96);
+    margin: .55rem 0 1.1rem 0;
+}
+.light-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 920px;
+    color: var(--ink);
+    font-size: .88rem;
+}
+.light-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F7FE 100%);
+    color: #1E3448 !important;
+    text-align: left;
+    padding: 13px 12px;
+    border-bottom: 1px solid #D7E3EF;
+    border-right: 1px solid #E2E8F0;
+    font-weight: 900;
+    letter-spacing: .025em;
+    white-space: nowrap;
+}
+.light-table tbody td {
+    padding: 12px 12px;
+    border-bottom: 1px solid #E4ECF5;
+    border-right: 1px solid #EEF2F7;
+    background: rgba(255,255,255,.96);
+    color: #102033 !important;
+    vertical-align: middle;
+    font-weight: 650;
+}
+.light-table tbody tr:nth-child(even) td { background: #F8FBFF; }
+.light-table tbody tr:hover td { background: #EEF8FF; }
+.light-table tbody tr:last-child td { border-bottom: none; }
+.light-table th:last-child, .light-table td:last-child { border-right: none; }
+.light-table .num-cell { text-align: right; font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.light-table .long-cell { min-width: 260px; line-height: 1.45; white-space: normal; }
+.light-table .nowrap-cell { white-space: nowrap; }
+.light-progress { display: flex; align-items: center; gap: 10px; min-width: 164px; }
+.light-progress-track {
+    width: 106px;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #E8EEF5;
+    border: 1px solid #D5E1EC;
+}
+.light-progress-fill { height: 100%; border-radius: 999px; background: var(--bar, #F97316); }
+.light-progress-value { color: #102033 !important; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 900; font-size: .80rem; white-space: nowrap; }
+.table-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: var(--chip-bg, #F8FAFC);
+    border: 1px solid var(--chip-border, #CBD5E1);
+    color: var(--chip-ink, #102033) !important;
+    font-weight: 900;
+    font-size: .78rem;
+    white-space: nowrap;
+}
+.table-chip::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--chip-dot, #64748B);
+}
+.table-note { margin: -0.45rem 0 1rem 0; color: var(--muted) !important; font-size: .80rem; font-weight: 650; }
+
 </style>
 """
 
@@ -833,6 +917,137 @@ def previous_year_value(df: pd.DataFrame, year: int, value_col: str, agg: str = 
     delta = cur - prev if not pd.isna(cur) and not pd.isna(prev) else np.nan
     return cur, prev, delta
 
+
+
+# =============================================================================
+# LIGHT TABLE RENDERER
+# =============================================================================
+
+
+def _chip_palette(value: object) -> tuple[str, str, str, str]:
+    text = str(value).strip()
+    upper = text.upper()
+    category_bg = {
+        "BAIK": ("#E6FFF4", "#78D6B0", "#064E3B", CATEGORY_COLORS["BAIK"]),
+        "SEDANG": ("#FFF7D6", "#F6D365", "#4A3411", CATEGORY_COLORS["SEDANG"]),
+        "TIDAK SEHAT": ("#FFF1E8", "#FDBA74", "#7C2D12", CATEGORY_COLORS["TIDAK SEHAT"]),
+        "SANGAT TIDAK SEHAT": ("#FFF1F3", "#FDA4AF", "#881337", CATEGORY_COLORS["SANGAT TIDAK SEHAT"]),
+        "BERBAHAYA": ("#F3EEFF", "#C4B5FD", "#3B0764", CATEGORY_COLORS["BERBAHAYA"]),
+    }
+    if upper in category_bg:
+        return category_bg[upper]
+    if text in RISK_COLORS or upper in {"PRIORITAS TINGGI", "PRIORITAS MENENGAH", "PRIORITAS PEMANTAUAN"}:
+        if "TINGGI" in upper:
+            return ("#FFF1F3", "#FDA4AF", "#881337", "#E11D48")
+        if "MENENGAH" in upper:
+            return ("#FFF7D6", "#F6D365", "#4A3411", "#F97316")
+        return ("#E6FFF4", "#78D6B0", "#064E3B", "#00A676")
+    if upper in {"AMAN", "VALID", "LAYAK DIGUNAKAN", "TRUE", "YA"}:
+        return ("#E6FFF4", "#78D6B0", "#064E3B", "#00A676")
+    if upper in {"PERLU PERHATIAN", "FALSE", "TIDAK"} or "REVIEW" in upper:
+        return ("#FFF7D6", "#F6D365", "#4A3411", "#F4B400")
+    if upper in CRITICAL_COLORS:
+        return ("#F8FAFC", "#CBD5E1", "#102033", CRITICAL_COLORS[upper])
+    return ("#F8FAFC", "#CBD5E1", "#102033", "#64748B")
+
+
+def _risk_bar_color(value: float) -> str:
+    if pd.isna(value):
+        return "#64748B"
+    if value >= 30:
+        return "#E11D48"
+    if value >= 15:
+        return "#F97316"
+    return "#00A676"
+
+
+def _format_table_value(value: object, col: str, numeric_cols: set[str], int_cols: set[str]) -> str:
+    if value is None or pd.isna(value):
+        return "—"
+    if col in int_cols:
+        return fmt_int(value)
+    if col in numeric_cols:
+        return fmt_float(value, 1)
+    if isinstance(value, (float, np.floating)):
+        return fmt_float(value, 1)
+    if isinstance(value, (int, np.integer)):
+        return fmt_int(value)
+    if isinstance(value, (bool, np.bool_)):
+        return "Ya" if bool(value) else "Tidak"
+    return str(value)
+
+
+def render_light_table(
+    df: pd.DataFrame,
+    *,
+    progress_cols: Optional[list[str]] = None,
+    numeric_cols: Optional[list[str]] = None,
+    int_cols: Optional[list[str]] = None,
+    chip_cols: Optional[list[str]] = None,
+    long_cols: Optional[list[str]] = None,
+    max_height: int = 520,
+    max_rows: Optional[int] = None,
+) -> None:
+    """Render a readable light-theme HTML table.
+
+    This avoids Streamlit's dataframe renderer, which can appear dark depending
+    on the viewer theme. The table is intentionally static but clearer for
+    executive review and screenshots.
+    """
+    if df is None or df.empty:
+        st.info("Tidak ada data untuk ditampilkan pada tabel ini.")
+        return
+
+    progress_cols = set(progress_cols or [])
+    numeric_cols = set(numeric_cols or [])
+    int_cols = set(int_cols or [])
+    chip_cols = set(chip_cols or [])
+    long_cols = set(long_cols or [])
+
+    table_df = df.copy()
+    original_len = len(table_df)
+    if max_rows is not None and len(table_df) > max_rows:
+        table_df = table_df.head(max_rows)
+
+    header = "".join(f"<th>{html_escape(str(col))}</th>" for col in table_df.columns)
+    rows_html: list[str] = []
+    for _, row in table_df.iterrows():
+        cells: list[str] = []
+        for col in table_df.columns:
+            value = row[col]
+            classes = ["long-cell" if col in long_cols else "nowrap-cell"]
+            if col in numeric_cols or col in int_cols:
+                classes.append("num-cell")
+
+            if col in progress_cols:
+                try:
+                    pct_value = float(value)
+                except Exception:
+                    pct_value = np.nan
+                width = 0 if pd.isna(pct_value) else max(0, min(100, pct_value))
+                bar = _risk_bar_color(pct_value)
+                rendered = (
+                    f'<div class="light-progress"><div class="light-progress-track">'
+                    f'<div class="light-progress-fill" style="width:{width:.2f}%; --bar:{bar};"></div>'
+                    f'</div><span class="light-progress-value">{html_escape(fmt_pct(pct_value, 1))}</span></div>'
+                )
+            elif col in chip_cols:
+                text = _format_table_value(value, col, numeric_cols, int_cols)
+                bg, border, ink, dot = _chip_palette(text)
+                rendered = f'<span class="table-chip" style="--chip-bg:{bg}; --chip-border:{border}; --chip-ink:{ink}; --chip-dot:{dot};">{html_escape(text)}</span>'
+            else:
+                rendered = html_escape(_format_table_value(value, col, numeric_cols, int_cols))
+            cells.append(f'<td class="{" ".join(classes)}">{rendered}</td>')
+        rows_html.append(f'<tr>{"".join(cells)}</tr>')
+
+    html = (
+        f'<div class="light-table-wrap" style="max-height:{max_height}px;">'
+        f'<table class="light-table"><thead><tr>{header}</tr></thead><tbody>{"".join(rows_html)}</tbody></table>'
+        f'</div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
+    if max_rows is not None and original_len > max_rows:
+        st.markdown(f'<div class="table-note">Menampilkan {fmt_int(max_rows)} dari {fmt_int(original_len)} baris. Gunakan tombol unduh untuk melihat data lengkap.</div>', unsafe_allow_html=True)
 
 def download_filtered_data(df: pd.DataFrame, filename: str) -> None:
     st.download_button(
@@ -1447,15 +1662,14 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         "pencemar_dominan": "Pencemar Dominan",
         "status_risiko": "Status Risiko",
     })
-    st.dataframe(
+    render_light_table(
         table,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Rata-rata ISPU": st.column_config.NumberColumn(format="%.1f"),
-            "Median ISPU": st.column_config.NumberColumn(format="%.1f"),
-            "% Tidak Sehat+": st.column_config.ProgressColumn(format="%.1f%%", min_value=0, max_value=100),
-        },
+        progress_cols=["% Tidak Sehat+"],
+        numeric_cols=["Rata-rata ISPU", "Median ISPU"],
+        int_cols=["Observasi"],
+        chip_cols=["Kategori Dominan", "Pencemar Dominan", "Status Risiko"],
+        long_cols=["Stasiun"],
+        max_height=380,
     )
 
     top_station_name = top_station["stasiun"] if top_station is not None else "—"
@@ -1583,14 +1797,14 @@ def page_station(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         "pencemar_dominan": "Pencemar Dominan",
         "status_risiko": "Status Risiko",
     })
-    st.dataframe(
+    render_light_table(
         table,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Rata-rata ISPU": st.column_config.NumberColumn(format="%.1f"),
-            "% Tidak Sehat+": st.column_config.ProgressColumn(format="%.1f%%", min_value=0, max_value=100),
-        },
+        progress_cols=["% Tidak Sehat+"],
+        numeric_cols=["Rata-rata ISPU"],
+        int_cols=["Observasi"],
+        chip_cols=["Kategori Dominan", "Pencemar Dominan", "Status Risiko"],
+        long_cols=["Stasiun"],
+        max_height=380,
     )
 
     insight_panel(
@@ -1732,14 +1946,13 @@ def page_seasonal(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         "arahan": "Arahan Operasional",
     })
     section_title("Kalender antisipasi operasional")
-    st.dataframe(
+    render_light_table(
         calendar[["Bulan", "Rata-rata ISPU", "% Tidak Sehat+", "Pencemar Dominan", "Status Operasional", "Arahan Operasional"]],
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Rata-rata ISPU": st.column_config.NumberColumn(format="%.1f"),
-            "% Tidak Sehat+": st.column_config.ProgressColumn(format="%.1f%%", min_value=0, max_value=100),
-        },
+        progress_cols=["% Tidak Sehat+"],
+        numeric_cols=["Rata-rata ISPU"],
+        chip_cols=["Pencemar Dominan", "Status Operasional"],
+        long_cols=["Arahan Operasional"],
+        max_height=560,
     )
 
     insight_panel(
@@ -1835,11 +2048,13 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
     else:
         val = validation_df.copy()
         val["status"] = np.where(val["jumlah_baris_bermasalah"] == 0, "Aman", "Perlu perhatian")
-        st.dataframe(
-            val.rename(columns={"aspek_validasi": "Aspek Validasi", "jumlah_baris_bermasalah": "Jumlah Baris Bermasalah", "status": "Status"}),
-            use_container_width=True,
-            hide_index=True,
-            column_config={"Jumlah Baris Bermasalah": st.column_config.NumberColumn(format="%d")},
+        validation_table = val.rename(columns={"aspek_validasi": "Aspek Validasi", "jumlah_baris_bermasalah": "Jumlah Baris Bermasalah", "status": "Status"})
+        render_light_table(
+            validation_table,
+            int_cols=["Jumlah Baris Bermasalah"],
+            chip_cols=["Status"],
+            long_cols=["Aspek Validasi"],
+            max_height=460,
         )
 
     section_title("Jejak Pembersihan Data")
@@ -1847,7 +2062,21 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
         st.info("File cleaning log tidak tersedia.")
     else:
         show_cols = [c for c in ["tahap", "masalah", "kolom_terdampak", "jumlah_baris_terdampak", "strategi_penanganan", "justifikasi", "dampak_setelah_cleaning"] if c in log_df.columns]
-        st.dataframe(log_df[show_cols], use_container_width=True, hide_index=True)
+        cleaning_table = log_df[show_cols].rename(columns={
+            "tahap": "Tahap",
+            "masalah": "Masalah",
+            "kolom_terdampak": "Kolom Terdampak",
+            "jumlah_baris_terdampak": "Jumlah Baris Terdampak",
+            "strategi_penanganan": "Strategi Penanganan",
+            "justifikasi": "Justifikasi",
+            "dampak_setelah_cleaning": "Dampak Setelah Cleaning",
+        })
+        render_light_table(
+            cleaning_table,
+            int_cols=["Jumlah Baris Terdampak"],
+            long_cols=["Masalah", "Kolom Terdampak", "Strategi Penanganan", "Justifikasi", "Dampak Setelah Cleaning"],
+            max_height=560,
+        )
 
     section_title("Audit duplikasi tanggal-stasiun")
     if audit_df.empty:
@@ -1867,7 +2096,25 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
                 fig.update_traces(marker_color="#F97316", textposition="outside", cliponaxis=False)
                 st.plotly_chart(apply_fig_style(fig, height=360, legend=False), use_container_width=True)
         show_cols = [c for c in ["duplicate_group_id", "tanggal", "stasiun", "max", "critical", "categori", "duplicate_type", "dedup_action", "used_for_main_dashboard_kpi"] if c in audit_df.columns]
-        st.dataframe(audit_df[show_cols].head(500), use_container_width=True, hide_index=True)
+        audit_table = audit_df[show_cols].rename(columns={
+            "duplicate_group_id": "ID Grup Duplikasi",
+            "tanggal": "Tanggal",
+            "stasiun": "Stasiun",
+            "max": "Max",
+            "critical": "Critical",
+            "categori": "Kategori",
+            "duplicate_type": "Jenis Duplikasi",
+            "dedup_action": "Tindakan Dedup",
+            "used_for_main_dashboard_kpi": "Dipakai KPI Utama",
+        })
+        render_light_table(
+            audit_table,
+            numeric_cols=["Max"],
+            chip_cols=["Critical", "Kategori", "Jenis Duplikasi", "Tindakan Dedup", "Dipakai KPI Utama"],
+            long_cols=["Stasiun", "Jenis Duplikasi", "Tindakan Dedup"],
+            max_height=560,
+            max_rows=500,
+        )
         st.download_button(
             label="Unduh audit duplikasi lengkap",
             data=audit_df.to_csv(index=False).encode("utf-8"),

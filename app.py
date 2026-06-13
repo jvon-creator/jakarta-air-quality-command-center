@@ -8,7 +8,9 @@ Run:
 
 from __future__ import annotations
 
+from html import escape as html_escape
 from pathlib import Path
+from textwrap import dedent
 from typing import Optional
 
 import numpy as np
@@ -814,6 +816,14 @@ def download_filtered_data(df: pd.DataFrame, filename: str) -> None:
 
 
 def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
+    """Render compact header safely.
+
+    The previous implementation placed the full hero, decision cards, and the
+    Air Quality Ribbon inside one large nested Markdown/HTML block. In some
+    Streamlit/Markdown renderers, the final closing tag can be interpreted as
+    literal text and shown as `</div>`. This version renders each HTML block as
+    a complete, self-contained fragment to prevent orphan closing tags.
+    """
     if df.empty:
         period = "Data belum tersedia"
         status = "Perlu unggah data"
@@ -843,41 +853,50 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
     status_cat = ispu_status_from_average(avg_ispu)
     page_purpose = PAGE_PURPOSE.get(current_page, "")
 
-    st.markdown(
-        f"""
-        <div class="command-hero" aria-label="Observatorium kualitas udara Jakarta dengan nuansa langit senja pastel">
-            <div class="hero-grid">
-                <div>
-                    <div class="hero-eyebrow">Kualitas Udara DKI Jakarta · {current_page}</div>
-                    <h1 class="hero-title">{APP_TITLE}</h1>
-                    <div class="hero-copy">{APP_SUBTITLE}</div>
-                    <div class="pill-row">
-                        <div class="pill">Ambang keputusan: ISPU 101</div>
-                        <div class="pill">Metrik utama: % observasi Tidak Sehat+</div>
-                        <div class="pill">Unit: tanggal-stasiun</div>
-                        <div class="pill">Data historis, bukan real-time</div>
-                        <div class="pill">{filtered_hint}</div>
-                    </div>
-                </div>
-                <div class="hero-meta">
-                    <div class="label">Periode data</div>
-                    <div class="value">{period}</div>
-                    <div class="status">{status}</div>
-                    <div class="data-badge">Data historis · bukan status udara real-time</div>
+    hero_html = f"""
+    <div class="command-hero" aria-label="Observatorium kualitas udara Jakarta dengan nuansa langit terang dan spektrum risiko ISPU">
+        <div class="hero-grid">
+            <div>
+                <div class="hero-eyebrow">Kualitas Udara DKI Jakarta · {html_escape(str(current_page))}</div>
+                <h1 class="hero-title">{html_escape(APP_TITLE)}</h1>
+                <div class="hero-copy">{html_escape(APP_SUBTITLE)}</div>
+                <div class="pill-row">
+                    <div class="pill">Ambang keputusan: ISPU 101</div>
+                    <div class="pill">Metrik utama: % observasi Tidak Sehat+</div>
+                    <div class="pill">Unit: tanggal-stasiun</div>
+                    <div class="pill">Data historis, bukan real-time</div>
+                    <div class="pill">{html_escape(filtered_hint)}</div>
                 </div>
             </div>
-            <div class="decision-grid">
-                <div class="decision-tile"><div class="tile-label">Status rata-rata</div><div class="tile-value">{status_cat}</div></div>
-                <div class="decision-tile"><div class="tile-label">Tidak Sehat+</div><div class="tile-value">{fmt_pct(unhealthy, 1)}</div></div>
-                <div class="decision-tile"><div class="tile-label">Prioritas lokasi</div><div class="tile-value">{top_station_code}</div></div>
-                <div class="decision-tile"><div class="tile-label">Pencemar dominan</div><div class="tile-value">{top_critical}</div></div>
+            <div class="hero-meta">
+                <div class="label">Periode data</div>
+                <div class="value">{html_escape(period)}</div>
+                <div class="status">{html_escape(status)}</div>
+                <div class="data-badge">Data historis · bukan status udara real-time</div>
             </div>
-            {air_quality_ribbon(filtered)}
         </div>
-        """,
-        unsafe_allow_html=True,
+    </div>
+    """
+    st.markdown(dedent(hero_html).strip(), unsafe_allow_html=True)
+
+    decision_html = f"""
+    <div class="decision-grid" aria-label="Ringkasan keputusan kualitas udara pada filter aktif">
+        <div class="decision-tile"><div class="tile-label">Status rata-rata</div><div class="tile-value">{html_escape(status_cat)}</div></div>
+        <div class="decision-tile"><div class="tile-label">Tidak Sehat+</div><div class="tile-value">{html_escape(fmt_pct(unhealthy, 1))}</div></div>
+        <div class="decision-tile"><div class="tile-label">Prioritas lokasi</div><div class="tile-value">{html_escape(top_station_code)}</div></div>
+        <div class="decision-tile"><div class="tile-label">Pencemar dominan</div><div class="tile-value">{html_escape(top_critical)}</div></div>
+    </div>
+    """
+    st.markdown(dedent(decision_html).strip(), unsafe_allow_html=True)
+
+    ribbon_html = air_quality_ribbon(filtered)
+    if ribbon_html:
+        st.markdown(dedent(ribbon_html).strip(), unsafe_allow_html=True)
+
+    page_brief(
+        "Fokus halaman",
+        page_purpose + f" Data terakhir tersedia: {data_end}. Semua persentase dihitung dari unit observasi tanggal-stasiun pada filter aktif, kecuali dinyatakan lain.",
     )
-    page_brief("Fokus halaman", page_purpose + f" Data terakhir tersedia: {data_end}. Semua persentase dihitung dari unit observasi tanggal-stasiun pada filter aktif, kecuali dinyatakan lain.")
 
 
 def empty_state() -> None:

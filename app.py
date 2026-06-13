@@ -34,7 +34,7 @@ st.set_page_config(
 # DESIGN TOKENS
 # =============================================================================
 
-APP_TITLE = "Jakarta Air Quality Command Center"
+APP_TITLE = "Observatorium Langit Udara Jakarta"
 APP_SUBTITLE = (
     "Dashboard keputusan kualitas udara: membaca napas kota, sinyal risiko, "
     "lokasi prioritas, pencemar dominan, periode rawan, dan kepercayaan data."
@@ -311,8 +311,42 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important;
 .air-ribbon-legend { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 8px; color: var(--slate) !important; font-size: .69rem; font-weight: 800; }
 .legend-dot { display: inline-flex; align-items: center; gap: 6px; color: var(--slate) !important; }
 .legend-dot::before { content:""; width: 9px; height: 9px; border-radius: 999px; background: var(--dot); box-shadow: 0 0 0 3px rgba(15,23,42,.06); }
-.page-brief { border-radius: 22px; padding: 14px 16px; margin: 1rem 0 .65rem 0; background: #FFFFFF; border: 1px solid var(--line); color: var(--slate) !important; box-shadow: var(--shadow-soft); }
-.page-brief b { color: var(--ink) !important; }
+.page-brief {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-radius: 16px;
+    padding: 10px 12px;
+    margin: .72rem 0 .42rem 0;
+    background: rgba(255,255,255,.90);
+    border: 1px solid rgba(15,23,42,.11);
+    color: var(--slate) !important;
+    box-shadow: 0 8px 20px rgba(15,23,42,.055);
+    font-size: .82rem;
+    line-height: 1.42;
+}
+.page-brief::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--leaf), var(--blue), var(--yellow), var(--orange));
+    box-shadow: 0 0 0 4px rgba(2,132,199,.10);
+}
+.page-brief .context-kicker {
+    display: inline-block;
+    margin-right: 7px;
+    color: #075985 !important;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .64rem;
+    font-weight: 900;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.page-brief .context-body { color: #334155 !important; font-weight: 650; }
 [data-testid="stPlotlyChart"] { border: 1px solid var(--line); border-radius: 24px; padding: 10px 10px 2px 10px; background: #FFFFFF; box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,.88); }
 .sidebar-purpose { margin: 8px 0 4px 0; border-radius: 18px; padding: 12px 13px; background: linear-gradient(135deg, #EAF6FF, #FFFFFF); border: 1px solid rgba(2,132,199,.22); color: var(--slate) !important; font-size: .82rem; line-height: 1.45; font-weight: 600; }
 .empty-state-panel { border-radius: 24px; padding: 22px; border: 1px dashed rgba(225,29,72,.42); background: #FFFFFF; color: var(--ink) !important; box-shadow: var(--shadow-soft); }
@@ -747,12 +781,20 @@ def section_title(title: str) -> None:
 
 
 def page_brief(title: str, body: str) -> None:
+    """Render one compact decision context line.
+
+    Kept intentionally small so it informs the decision context without pushing
+    KPI cards and visuals below the fold.
+    """
     title_html = safe_html_text(title)
     body_html = safe_html_text(body, allow_br=True)
-    st.markdown(
-        f'<div class="page-brief"><b>{title_html}</b><br>{body_html}</div>',
-        unsafe_allow_html=True,
+    html = (
+        f'<div class="page-brief">'
+        f'<span class="context-kicker">{title_html}</span>'
+        f'<span class="context-body">{body_html}</span>'
+        f'</div>'
     )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def air_quality_ribbon(df: pd.DataFrame) -> str:
@@ -1137,10 +1179,6 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
     if ribbon_html:
         st.markdown(dedent(ribbon_html).strip(), unsafe_allow_html=True)
 
-    page_brief(
-        "Fokus halaman",
-        page_purpose + f" Data terakhir tersedia: {data_end}. Semua persentase dihitung dari unit observasi tanggal-stasiun pada filter aktif, kecuali dinyatakan lain.",
-    )
 
 
 def empty_state() -> None:
@@ -1618,7 +1656,7 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         empty_state()
         return
 
-    page_brief("Pertanyaan keputusan", "Seberapa serius kondisi udara pada periode aktif, di mana lokasi prioritas, dan pencemar apa yang perlu segera diperhatikan? Angka dihitung dari observasi tanggal-stasiun pada filter aktif.")
+    page_brief("Konteks keputusan", "Seberapa serius kondisi udara pada periode aktif, di mana lokasi prioritas, dan pencemar apa yang perlu segera diperhatikan? Angka dihitung dari observasi tanggal-stasiun pada filter aktif.")
 
     avg_ispu = df["max"].mean()
     median_ispu = df["max"].median()
@@ -1695,7 +1733,7 @@ def page_trend(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         empty_state()
         return
 
-    page_brief("Pertanyaan keputusan", "Apakah kualitas udara sedang membaik, memburuk, atau fluktuatif; dan kapan nilai ISPU melewati ambang Tidak Sehat? Persentase risiko menggunakan observasi tanggal-stasiun sebagai denominator.")
+    page_brief("Konteks keputusan", "Apakah kualitas udara sedang membaik, memburuk, atau fluktuatif; dan kapan nilai ISPU melewati ambang Tidak Sehat? Persentase risiko menggunakan observasi tanggal-stasiun sebagai denominator.")
 
     control_a, control_b, control_c = st.columns([1.1, 1.1, 1])
     with control_a:
@@ -1753,7 +1791,7 @@ def page_station(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         empty_state()
         return
 
-    page_brief("Pertanyaan keputusan", "Stasiun mana yang harus menjadi prioritas pengendalian pencemaran berdasarkan frekuensi risiko dan tekanan ISPU? Perbandingan memakai persentase per stasiun agar lebih adil.")
+    page_brief("Konteks keputusan", "Stasiun mana yang harus menjadi prioritas pengendalian pencemaran berdasarkan frekuensi risiko dan tekanan ISPU? Perbandingan memakai persentase per stasiun agar lebih adil.")
 
     summary = station_summary(df)
     if summary.empty:
@@ -1823,7 +1861,7 @@ def page_critical(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         empty_state()
         return
 
-    page_brief("Pertanyaan keputusan", "Parameter pencemar apa yang paling sering mendorong risiko kualitas udara dan perlu menjadi fokus pengendalian? Critical dibaca sebagai parameter pembentuk indeks tertinggi, bukan konsentrasi fisik terbesar.")
+    page_brief("Konteks keputusan", "Parameter pencemar apa yang paling sering mendorong risiko kualitas udara dan perlu menjadi fokus pengendalian? Critical dibaca sebagai parameter pembentuk indeks tertinggi, bukan konsentrasi fisik terbesar.")
 
     crit_df = df[df["critical"].notna() & (df["critical"] != "TIDAK ADA DATA")].copy()
     if crit_df.empty:
@@ -1885,7 +1923,7 @@ def page_seasonal(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         empty_state()
         return
 
-    page_brief("Pertanyaan keputusan", "Bulan apa yang menjadi periode rawan dan kapan Dinas perlu meningkatkan pemantauan serta komunikasi risiko? Pola musiman dibaca dari observasi tanggal-stasiun pada filter aktif.")
+    page_brief("Konteks keputusan", "Bulan apa yang menjadi periode rawan dan kapan Dinas perlu meningkatkan pemantauan serta komunikasi risiko? Pola musiman dibaca dari observasi tanggal-stasiun pada filter aktif.")
 
     monthly = df.groupby("nama_bulan", observed=True).agg(
         rata_rata_ispu=("max", "mean"),
@@ -1971,7 +2009,7 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
         empty_state()
         return
 
-    page_brief("Pertanyaan keputusan", "Apakah data cukup valid, cukup terkini, dan cukup representatif untuk dijadikan dasar keputusan? Menu ini juga membatasi interpretasi agar dashboard tidak dibaca sebagai prediksi atau status real-time.")
+    page_brief("Konteks keputusan", "Apakah data cukup valid, cukup terkini, dan cukup representatif untuk dijadikan dasar keputusan? Menu ini juga membatasi interpretasi agar dashboard tidak dibaca sebagai prediksi atau status real-time.")
 
     total_final = len(full_df)
     total_filtered = len(df)
@@ -2176,7 +2214,7 @@ def main() -> None:
 
     st.markdown("---")
     st.caption(
-        "Dashboard BI ISPU DKI Jakarta · Color Contrast Decision Observatory: spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
+        "Dashboard BI ISPU DKI Jakarta : spektrum kualitas udara, unit observasi tanggal-stasiun, dan data historis untuk keputusan berbasis data."
     )
 
 

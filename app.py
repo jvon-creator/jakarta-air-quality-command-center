@@ -1141,6 +1141,121 @@ def previous_year_value(df: pd.DataFrame, year: int, value_col: str, agg: str = 
 
 
 
+def join_ranked_items(items: list[str]) -> str:
+    """Join ranked items for executive copy."""
+    cleaned = [str(item) for item in items if item and str(item) != "—"]
+    if not cleaned:
+        return "—"
+    if len(cleaned) == 1:
+        return cleaned[0]
+    if len(cleaned) == 2:
+        return " dan ".join(cleaned)
+    return ", ".join(cleaned[:-1]) + ", dan " + cleaned[-1]
+
+
+def top_station_rank_text(summary: pd.DataFrame, n: int = 3) -> str:
+    if summary is None or summary.empty:
+        return "—"
+    rows = summary.head(n)
+    return join_ranked_items([
+        f"{station_code(row['stasiun'])} ({fmt_pct(row['persen_tidak_sehat_plus'], 1)})"
+        for _, row in rows.iterrows()
+    ])
+
+
+def top_month_rank_text(monthly: pd.DataFrame, metric_col: str = "persen_tidak_sehat_plus", n: int = 3) -> str:
+    if monthly is None or monthly.empty or metric_col not in monthly.columns:
+        return "—"
+    rows = monthly.sort_values(metric_col, ascending=False).head(n)
+    if metric_col.startswith("persen"):
+        return join_ranked_items([f"{row['nama_bulan']} ({fmt_pct(row[metric_col], 1)})" for _, row in rows.iterrows()])
+    return join_ranked_items([f"{row['nama_bulan']} ({fmt_float(row[metric_col], 1)})" for _, row in rows.iterrows()])
+
+
+def top_critical_rank_text(df: pd.DataFrame, n: int = 3) -> str:
+    if df is None or df.empty or "critical" not in df.columns:
+        return "—"
+    counts = (
+        df[df["critical"].notna() & (df["critical"] != "TIDAK ADA DATA")]
+        .groupby("critical")
+        .size()
+        .reset_index(name="jumlah")
+        .sort_values("jumlah", ascending=False)
+    )
+    if counts.empty:
+        return "—"
+    total = max(counts["jumlah"].sum(), 1)
+    return join_ranked_items([
+        f"{row['critical']} ({fmt_pct(row['jumlah'] / total * 100, 1)})"
+        for _, row in counts.head(n).iterrows()
+    ])
+
+
+def response_action_by_risk(pct_unhealthy: float | None) -> tuple[str, str]:
+    """Return executive response level and operational action for a risk percentage."""
+    level = risk_level(pct_unhealthy)
+    if level == "Prioritas Tinggi":
+        action = "tetapkan sebagai prioritas pengawasan intensif, lakukan validasi lapangan, evaluasi sumber emisi sekitar titik prioritas, dan siapkan komunikasi risiko."
+    elif level == "Prioritas Menengah":
+        action = "perkuat pemantauan berkala, cek kenaikan tren, dan siapkan respons cepat bila proporsi Tidak Sehat+ meningkat."
+    elif level == "Prioritas Pemantauan":
+        action = "lanjutkan pemantauan rutin, gunakan sebagai baseline pembanding, dan tetap dalami pencemar dominan bila terjadi lonjakan."
+    else:
+        action = "data belum cukup untuk menetapkan respons operasional; longgarkan filter atau cek ketersediaan data."
+    return level, action
+
+
+def trend_context_text(current: float, previous: float, historical: float) -> str:
+    if pd.isna(current):
+        return "belum dapat dinilai karena data tahun terakhir kosong."
+    parts = []
+    if not pd.isna(previous):
+        delta = current - previous
+        direction = "lebih tinggi" if delta > 0 else "lebih rendah" if delta < 0 else "sama"
+        parts.append(f"{direction} {fmt_pct(abs(delta), 1)} poin dibanding tahun sebelumnya")
+    if not pd.isna(historical):
+        diff = current - historical
+        pos = "di atas" if diff > 0 else "di bawah" if diff < 0 else "setara dengan"
+        parts.append(f"{pos} rata-rata historis ({fmt_pct(historical, 1)})")
+    return " dan ".join(parts) + "." if parts else "belum dapat dibandingkan dengan periode lain."
+
+
+def pollutant_policy_guidance(pollutant: str) -> str:
+    key = str(pollutant).upper().replace(".", "")
+    if key in {"PM25", "PM10"}:
+        return "arah awal kebijakan dapat difokuskan pada pengendalian partikulat: transportasi, debu jalan, konstruksi, pembakaran terbuka, serta validasi lapangan di sekitar titik prioritas."
+    if key == "NO2":
+        return "arah awal kebijakan dapat difokuskan pada sumber pembakaran kendaraan dan lalu lintas, serta evaluasi emisi pada koridor aktivitas tinggi."
+    if key == "SO2":
+        return "arah awal kebijakan dapat difokuskan pada potensi sumber pembakaran berbasis sulfur/industri/energi dan perlu dikonfirmasi dengan data sumber emisi."
+    if key == "CO":
+        return "arah awal kebijakan dapat difokuskan pada pembakaran tidak sempurna, aktivitas kendaraan, dan sumber pembakaran lokal."
+    if key == "O3":
+        return "arah awal kebijakan perlu mempertimbangkan prekursor ozon dan faktor meteorologi karena O3 merupakan polutan sekunder."
+    return "arah kebijakan perlu dikonfirmasi dengan data sumber emisi dan validasi lapangan karena parameter dominan belum terklasifikasi jelas."
+
+
+def decision_grade_body(temuan: str, makna: str, tindakan: str, batasan: str) -> str:
+    """Structured executive insight format: finding, meaning, action, caveat."""
+    return (
+        f"<b>Temuan:</b> {temuan}<br>"
+        f"<b>Makna:</b> {makna}<br>"
+        f"<b>Arahan tindakan:</b> {tindakan}<br>"
+        f"<b>Batasan:</b> {batasan}"
+    )
+
+
+def decision_confidence_text(status: str, validation_issues: int, final_dup: int, total_filtered: int) -> str:
+    if status == "Layak digunakan" and total_filtered > 0:
+        return "Aman untuk analisis strategis dan evaluatif berbasis data historis: pola risiko, prioritas stasiun, pencemar dominan, periode rawan, dan audit kualitas data."
+    if total_filtered == 0:
+        return "Tidak cukup data pada filter aktif. Keputusan tidak boleh diambil dari basis data kosong; longgarkan filter terlebih dahulu."
+    if final_dup > 0 or validation_issues > 0:
+        return "Perlu kehati-hatian. Terdapat isu validasi/duplikasi final yang perlu ditinjau sebelum angka dipakai sebagai dasar keputusan."
+    return "Perlu kehati-hatian karena terdapat batasan data yang perlu dibaca bersama catatan metodologi."
+
+
+
 # =============================================================================
 # LIGHT TABLE RENDERER
 # =============================================================================
@@ -2039,17 +2154,21 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
 
     top_station_name = top_station["stasiun"] if top_station is not None else "—"
     top_station_pct = top_station["persen_tidak_sehat_plus"] if top_station is not None else np.nan
+    top3_stations = top_station_rank_text(stations)
+    response_level, response_action = response_action_by_risk(unhealthy)
     insight_panel(
         "Insight eksekutif",
-        f"Pada periode terpilih, berdasarkan <b>{obs_context_active(df)}</b>, kondisi dominan adalah <b>{top_category}</b> dengan rata-rata ISPU <b>{fmt_float(avg_ispu, 1)}</b>. "
-        f"Proporsi observasi <b>Tidak Sehat+</b> mencapai <b>{fmt_pct(unhealthy, 1)}</b>. "
-        f"Stasiun yang perlu diprioritaskan adalah <b>{top_station_name}</b> dengan risiko Tidak Sehat+ sebesar <b>{fmt_pct(top_station_pct, 1)}</b> dari observasi tanggal-stasiun di stasiun tersebut. "
-        f"Pencemar kritis yang paling sering muncul adalah <b>{top_critical}</b>.",
+        decision_grade_body(
+            temuan=f"Berdasarkan <b>{obs_context_active(df)}</b>, kategori dominan adalah <b>{top_category}</b>, rata-rata ISPU <b>{fmt_float(avg_ispu, 1)}</b>, dan observasi <b>Tidak Sehat+</b> sebesar <b>{fmt_pct(unhealthy, 1)}</b>.",
+            makna=f"Status respons periode aktif adalah <b>{response_level}</b>. Tiga lokasi prioritas berdasarkan frekuensi Tidak Sehat+ adalah <b>{top3_stations}</b>; lokasi teratas adalah <b>{top_station_name}</b> dengan <b>{fmt_pct(top_station_pct, 1)}</b>.",
+            tindakan=f"{response_action.capitalize()} Dalami <b>{top_critical}</b> pada menu Pencemar Kritis dan cek periode rawan pada menu Pola Musiman sebelum menetapkan intervensi.",
+            batasan="Angka menggambarkan observasi tanggal-stasiun pada filter aktif, bukan status udara real-time dan bukan klaim keterwakilan seluruh wilayah Jakarta.",
+        ),
     )
 
     insight_panel(
-        "Arahan tindakan",
-        "Gunakan halaman ini sebagai ringkasan cepat untuk menetapkan prioritas awal: fokus pada stasiun dengan frekuensi Tidak Sehat+ tertinggi, lalu dalami pencemar dominan pada menu Pencemar Kritis dan periode rawan pada menu Pola Musiman.",
+        "Prioritas keputusan cepat",
+        f"Mulai dari <b>lokasi prioritas</b> ({top_station_name}), lalu cek <b>pencemar dominan</b> ({top_critical}), kemudian tentukan <b>periode antisipasi</b> pada dashboard musiman. Alur ini membantu keputusan bergerak dari kondisi umum → lokasi → parameter → waktu tindakan.",
     )
 
     download_filtered_data(df, "ispu_jakarta_filtered_overview.csv")
@@ -2102,14 +2221,23 @@ def page_trend(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         st.plotly_chart(fig_category_by_year(df), use_container_width=True, config=PLOTLY_CONFIG)
 
     trend_direction = "memburuk" if not pd.isna(delta_unhealthy) and delta_unhealthy > 0 else "membaik/menurun" if not pd.isna(delta_unhealthy) and delta_unhealthy < 0 else "relatif stabil atau belum dapat dibandingkan"
+    historical_unhealthy = pct_true(df["flag_tidak_sehat_plus"])
+    trend_context = trend_context_text(cur_unhealthy, prev_unhealthy, historical_unhealthy)
+    response_level, response_action = response_action_by_risk(cur_unhealthy)
+    yearly_rank = worst_year_df.head(3) if not worst_year_df.empty else pd.DataFrame()
+    top_years = join_ranked_items([f"{int(row['tahun'])} ({fmt_pct(row['persen_tidak_sehat_plus'], 1)})" for _, row in yearly_rank.iterrows()])
     insight_panel(
         "Insight tren",
-        f"Pada tahun terakhir dalam filter ({max_year}), berdasarkan <b>{fmt_int(len(df[df['tahun'] == max_year]))} observasi tanggal-stasiun</b>, rata-rata ISPU sebesar <b>{fmt_float(cur_avg, 1)}</b> dan frekuensi Tidak Sehat+ sebesar <b>{fmt_pct(cur_unhealthy, 1)}</b>. "
-        f"Dibanding tahun sebelumnya, perubahan frekuensi Tidak Sehat+ menunjukkan kondisi <b>{trend_direction}</b>. Garis threshold ISPU 101 membantu membaca periode ketika kualitas udara mulai masuk kategori Tidak Sehat.",
+        decision_grade_body(
+            temuan=f"Pada tahun terakhir dalam filter ({max_year}), terdapat <b>{fmt_int(len(df[df['tahun'] == max_year]))} observasi tanggal-stasiun</b> dengan rata-rata ISPU <b>{fmt_float(cur_avg, 1)}</b> dan frekuensi Tidak Sehat+ <b>{fmt_pct(cur_unhealthy, 1)}</b>.",
+            makna=f"Kondisi tahun terakhir terlihat <b>{trend_direction}</b>; konteks pembanding menunjukkan angka tersebut {trend_context} Tahun dengan risiko tertinggi dalam filter adalah <b>{top_years}</b>.",
+            tindakan=f"Untuk status <b>{response_level}</b>, {response_action} Periode yang konsisten melewati threshold ISPU 101 perlu menjadi target evaluasi program pengendalian emisi.",
+            batasan="Tren historis membantu membaca pola dan evaluasi, tetapi tidak boleh dibaca sebagai prediksi masa depan tanpa model dan variabel tambahan.",
+        ),
     )
     insight_panel(
         "Arahan tindakan",
-        "Periode yang berulang melewati ambang Tidak Sehat perlu menjadi target evaluasi kebijakan, penguatan pemantauan, dan komunikasi risiko. Untuk keputusan operasional, baca tren tahun terakhir lebih dulu, lalu gunakan tren historis sebagai pembanding.",
+        "Gunakan tren tahun terakhir sebagai sinyal operasional, lalu bandingkan dengan tahun sebelumnya dan rata-rata historis. Jika pemburukan berulang, koordinasikan evaluasi sumber emisi pada stasiun prioritas dan bulan yang paling sering melewati ambang Tidak Sehat.",
     )
 
 
@@ -2191,14 +2319,22 @@ def page_station(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         max_height=380,
     )
 
+    top3_stations = top_station_rank_text(summary)
+    high_count = int((summary["status_risiko"] == "Prioritas Tinggi").sum())
+    mid_count = int((summary["status_risiko"] == "Prioritas Menengah").sum())
+    response_level, response_action = response_action_by_risk(top["persen_tidak_sehat_plus"])
     insight_panel(
         "Insight lokasi",
-        f"Stasiun <b>{top['stasiun']}</b> menjadi prioritas karena memiliki frekuensi Tidak Sehat+ tertinggi sebesar <b>{fmt_pct(top['persen_tidak_sehat_plus'], 1)}</b>. "
-        f"Perbandingan ini memakai persentase dari observasi tanggal-stasiun pada masing-masing stasiun, bukan jumlah mentah, sehingga lebih adil ketika jumlah observasi antar stasiun berbeda. Filter aktif berisi <b>{obs_context(df)}</b>.",
+        decision_grade_body(
+            temuan=f"Stasiun <b>{top['stasiun']}</b> memiliki frekuensi Tidak Sehat+ tertinggi sebesar <b>{fmt_pct(top['persen_tidak_sehat_plus'], 1)}</b>. Tiga stasiun prioritas adalah <b>{top3_stations}</b>.",
+            makna=f"Terdapat <b>{fmt_int(high_count)}</b> stasiun prioritas tinggi dan <b>{fmt_int(mid_count)}</b> stasiun prioritas menengah pada filter aktif. Kesenjangan risiko tertinggi-terendah sebesar <b>{fmt_pct(gap, 1)}</b> menunjukkan bahwa respons sebaiknya spesifik lokasi, bukan seragam.",
+            tindakan=f"Untuk lokasi teratas dengan status <b>{response_level}</b>, {response_action} Kaitkan hasil ini dengan pencemar dominan per stasiun sebelum menyusun inspeksi/validasi lapangan.",
+            batasan=f"Perbandingan memakai persentase dari observasi tanggal-stasiun pada masing-masing stasiun; peta hanya titik SPKU dan tidak mewakili seluruh wilayah administratif.",
+        ),
     )
     insight_panel(
         "Arahan tindakan",
-        "Prioritaskan pengawasan, evaluasi sumber emisi, dan validasi lapangan pada stasiun dengan status Prioritas Tinggi. Gunakan pencemar dominan per stasiun sebagai dasar untuk menentukan intervensi teknis yang lebih spesifik.",
+        "Susun prioritas berjenjang: Prioritas Tinggi untuk validasi lapangan dan evaluasi sumber emisi, Prioritas Menengah untuk pemantauan tren berkala, dan Prioritas Pemantauan sebagai baseline pembanding kualitas udara.",
     )
 
 
@@ -2252,10 +2388,17 @@ def page_critical(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     else:
         st.plotly_chart(fig_critical_distribution(unhealthy_crit, "Pencemar dominan khusus kategori Tidak Sehat+"), use_container_width=True, config=PLOTLY_CONFIG)
 
+    top3_critical = top_critical_rank_text(crit_df)
+    policy_guidance = pollutant_policy_guidance(top_crit)
+    unhealthy_guidance = pollutant_policy_guidance(top_crit_unhealthy)
     insight_panel(
         "Insight pencemar",
-        f"Pencemar kritis paling dominan pada periode terpilih adalah <b>{top_crit}</b> dengan porsi <b>{fmt_pct(top_crit_pct, 1)}</b> dari <b>{fmt_int(len(crit_df))} observasi tanggal-stasiun yang memiliki critical</b>. "
-        f"Pada observasi Tidak Sehat+, pencemar dominan adalah <b>{top_crit_unhealthy}</b>. Ini membantu mengarahkan kebijakan dari sekadar mengetahui udara buruk menjadi mengetahui parameter yang perlu dikendalikan.",
+        decision_grade_body(
+            temuan=f"Pencemar kritis dominan adalah <b>{top_crit}</b> dengan porsi <b>{fmt_pct(top_crit_pct, 1)}</b> dari <b>{fmt_int(len(crit_df))} observasi tanggal-stasiun yang memiliki critical</b>. Tiga pencemar teratas adalah <b>{top3_critical}</b>.",
+            makna=f"Pada observasi Tidak Sehat+, pencemar dominan adalah <b>{top_crit_unhealthy}</b>. Ini mengarahkan kebijakan dari isu umum kualitas udara menjadi fokus parameter yang perlu dikendalikan.",
+            tindakan=f"Untuk dominasi <b>{top_crit}</b>, {policy_guidance} Jika fokus khusus pada kondisi Tidak Sehat+, gunakan arahan untuk <b>{top_crit_unhealthy}</b>: {unhealthy_guidance}",
+            batasan="Critical adalah parameter pembentuk indeks tertinggi, bukan konsentrasi fisik terbesar dan bukan bukti sebab-akibat tunggal. Analisis lanjutan perlu data sumber emisi, meteorologi, dan validasi lapangan.",
+        ),
     )
     insight_panel(
         "Catatan interpretasi",
@@ -2339,14 +2482,21 @@ def page_seasonal(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         max_height=560,
     )
 
+    top3_risk_months = top_month_rank_text(monthly, "persen_tidak_sehat_plus")
+    top3_avg_months = top_month_rank_text(monthly, "rata_rata_ispu")
+    response_level, response_action = response_action_by_risk(worst_risk["persen_tidak_sehat_plus"])
     insight_panel(
         "Insight musiman",
-        f"Berdasarkan <b>{obs_context_active(df)}</b>, bulan dengan rata-rata ISPU tertinggi adalah <b>{worst_avg['nama_bulan']}</b>, sedangkan bulan dengan frekuensi Tidak Sehat+ tertinggi adalah <b>{worst_risk['nama_bulan']}</b>. "
-        f"Bulan rawan ini perlu dibaca sebagai kalender kewaspadaan agar tindakan tidak hanya reaktif ketika polusi sudah tinggi.",
+        decision_grade_body(
+            temuan=f"Berdasarkan <b>{obs_context_active(df)}</b>, bulan dengan rata-rata ISPU tertinggi adalah <b>{worst_avg['nama_bulan']}</b>, sedangkan bulan dengan frekuensi Tidak Sehat+ tertinggi adalah <b>{worst_risk['nama_bulan']}</b>. Tiga bulan rawan utama adalah <b>{top3_risk_months}</b>.",
+            makna=f"Kalender risiko menunjukkan kapan Dinas perlu bersiap sebelum kualitas udara memburuk. Bulan dengan tekanan ISPU tertinggi adalah <b>{top3_avg_months}</b>, sehingga evaluasi perlu melihat baik rata-rata ISPU maupun frekuensi Tidak Sehat+.",
+            tindakan=f"Untuk bulan rawan dengan status <b>{response_level}</b>, {response_action} Terapkan siklus: 1–2 bulan sebelum bulan rawan siapkan pemantauan/komunikasi risiko; saat bulan rawan tingkatkan pengawasan; setelahnya evaluasi efektivitas tindakan.",
+            batasan="Pola musiman bersifat deskriptif dan tidak otomatis menjelaskan penyebab. Interpretasi perlu dilengkapi data meteorologi, emisi, dan kondisi aktivitas sumber pencemar.",
+        ),
     )
     insight_panel(
         "Arahan tindakan",
-        "Gunakan bulan dengan status Prioritas Tinggi sebagai periode peningkatan pemantauan, inspeksi sumber emisi, validasi lapangan, dan komunikasi risiko kepada masyarakat. Untuk bulan risiko menengah, siapkan respons dini bila indikator mulai naik.",
+        "Gunakan kalender antisipasi sebagai rencana operasional tahunan: bulan prioritas tinggi untuk peningkatan pemantauan dan komunikasi risiko, bulan prioritas menengah untuk kesiapsiagaan, dan bulan pemantauan sebagai periode evaluasi program.",
     )
 
 
@@ -2381,9 +2531,15 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
     with c5:
         kpi_card("Duplikasi final", fmt_int(final_dup), note=f"audit duplikasi: {fmt_int(total_audit)} baris", accent="#E11D48" if final_dup else "#00A676")
 
+    decision_confidence = decision_confidence_text(status, validation_issues, final_dup, total_filtered)
     insight_panel(
-        "Makna untuk pengambilan keputusan",
-        "Menu ini memastikan angka pada dashboard tidak dibaca secara keliru. Dataset final sudah dibuat unik pada level tanggal-stasiun, hasil validasi akhir ditampilkan, dan data duplikasi dipisahkan ke audit agar tidak menggandakan KPI utama.",
+        "Decision Confidence",
+        decision_grade_body(
+            temuan=f"Status data dashboard adalah <b>{status}</b>. Dataset final berisi <b>{fmt_int(total_final)}</b> observasi, <b>{fmt_int(total_stations)}</b> stasiun, duplikasi final <b>{fmt_int(final_dup)}</b>, dan isu validasi akhir <b>{fmt_int(validation_issues)}</b> baris.",
+            makna=decision_confidence,
+            tindakan="Gunakan dashboard untuk keputusan strategis dan evaluatif: prioritas lokasi, pencemar dominan, tren historis, dan periode rawan. Untuk keputusan harian/status udara saat ini, gunakan data pemantauan terbaru atau real-time.",
+            batasan="Ketersediaan parameter tidak selalu merata sepanjang periode; interpretasi PM2.5, critical, dan tren historis harus dibaca bersama catatan metodologi serta audit data.",
+        ),
     )
 
     section_title("Cakupan Sensor dan Periode")

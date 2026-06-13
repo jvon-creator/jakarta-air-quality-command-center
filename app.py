@@ -1018,6 +1018,45 @@ def apply_fig_style(fig: go.Figure, height: Optional[int] = None, legend: bool =
     return fig
 
 
+def add_stacked_percent_labels(fig: go.Figure) -> go.Figure:
+    """Show percentage values on stacked bar charts.
+
+    Labels are rendered inside each stack segment so Kepala Dinas can read the
+    magnitude without hovering. Yellow/light segments use dark text; darker
+    risk colors use white text for contrast.
+    """
+    dark_text_traces = {"SEDANG", "SO2"}
+    for trace in fig.data:
+        trace_name = str(getattr(trace, "name", "")).strip().upper()
+        y_values = getattr(trace, "y", [])
+        labels = []
+        for value in y_values:
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                labels.append("")
+                continue
+            if pd.isna(number) or number <= 0:
+                labels.append("")
+            else:
+                labels.append(f"{number:.1f}%")
+        text_color = "#102033" if trace_name in dark_text_traces else "#FFFFFF"
+        trace.update(
+            text=labels,
+            texttemplate="%{text}",
+            textposition="inside",
+            insidetextanchor="middle",
+            textfont=dict(
+                color=text_color,
+                size=10,
+                family="JetBrains Mono, Inter, Arial, sans-serif",
+            ),
+            cliponaxis=False,
+        )
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode="show")
+    return fig
+
+
 def add_threshold_lines(fig: go.Figure, include_all: bool = False) -> go.Figure:
     thresholds = [(101, "Ambang Tidak Sehat 101", "#EA580C")]
     if include_all:
@@ -1504,12 +1543,13 @@ def fig_category_by_year(df: pd.DataFrame, title: str = "Komposisi kategori ISPU
     )
     fig.update_layout(barmode="stack")
     fig.update_yaxes(range=[0, 100], ticksuffix="%")
+    fig = add_stacked_percent_labels(fig)
     fig = apply_fig_style(fig, height=490)
     fig.update_layout(
         title=dict(text=title, y=0.96, x=0.0, xanchor="left", yanchor="top"),
         margin=dict(t=96, r=24, b=90, l=50),
         legend=dict(
-            title_text="Kategori",
+            title_text="",
             orientation="h",
             yanchor="top",
             y=-0.24,
@@ -1667,6 +1707,7 @@ def fig_station_category_stack(df: pd.DataFrame, title: str = "Komposisi kategor
     )
     fig.update_layout(barmode="stack")
     fig.update_yaxes(range=[0, 100], ticksuffix="%")
+    fig = add_stacked_percent_labels(fig)
     return apply_fig_style(fig, height=430)
 
 
@@ -1773,6 +1814,7 @@ def fig_critical_by_station(df: pd.DataFrame) -> go.Figure:
     )
     fig.update_layout(barmode="stack")
     fig.update_yaxes(range=[0, 100], ticksuffix="%")
+    fig = add_stacked_percent_labels(fig)
     return apply_fig_style(fig, height=430)
 
 
@@ -1799,6 +1841,7 @@ def fig_critical_trend_year(df: pd.DataFrame) -> go.Figure:
     )
     fig.update_layout(barmode="stack")
     fig.update_yaxes(range=[0, 100], ticksuffix="%")
+    fig = add_stacked_percent_labels(fig)
     return apply_fig_style(fig, height=430)
 
 

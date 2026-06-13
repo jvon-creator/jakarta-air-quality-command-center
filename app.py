@@ -133,6 +133,15 @@ STATION_COORDINATES = {
     },
 }
 
+
+# Peristiwa/konteks penting untuk anotasi tren.
+# Catatan metodologis: anotasi hanya memberi konteks interpretasi, bukan klaim sebab-akibat.
+CONTEXT_EVENTS = {
+    "covid_start": pd.Timestamp("2020-03-01"),
+    "covid_end": pd.Timestamp("2021-12-31"),
+    "covid_label": "COVID-19 / pembatasan aktivitas (konteks, bukan kausal)",
+}
+
 # =============================================================================
 # CSS
 # =============================================================================
@@ -1255,6 +1264,191 @@ def decision_confidence_text(status: str, validation_issues: int, final_dup: int
     return "Perlu kehati-hatian karena terdapat batasan data yang perlu dibaca bersama catatan metodologi."
 
 
+def first_available_year(df: pd.DataFrame, parameter_col: str) -> Optional[int]:
+    """Return first year where a pollutant parameter is available."""
+    if df is None or df.empty or parameter_col not in df.columns or "tahun" not in df.columns:
+        return None
+    available = df[df[parameter_col].notna()]
+    if available.empty:
+        return None
+    return int(available["tahun"].min())
+
+
+def parameter_availability_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Build parameter availability summary for data confidence and fair comparison."""
+    rows = []
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["Parameter", "Tahun Mulai", "Tahun Akhir", "Coverage", "Tahun Tersedia", "Status", "Catatan Interpretasi"])
+    total_rows = max(len(df), 1)
+    total_years = max(df["tahun"].nunique(), 1) if "tahun" in df.columns else 1
+    for col in POLLUTANT_COLS:
+        if col not in df.columns:
+            rows.append({
+                "Parameter": col.upper(),
+                "Tahun Mulai": "—",
+                "Tahun Akhir": "—",
+                "Coverage": 0.0,
+                "Tahun Tersedia": 0,
+                "Status": "Tidak tersedia",
+                "Catatan Interpretasi": "Parameter tidak tersedia pada dataset final.",
+            })
+            continue
+        available = df[df[col].notna()]
+        coverage = float(df[col].notna().mean() * 100)
+        if available.empty:
+            first_year = last_year = "—"
+            years_available = 0
+        else:
+            first_year = int(available["tahun"].min())
+            last_year = int(available["tahun"].max())
+            years_available = int(available["tahun"].nunique())
+        if coverage >= 95 and years_available >= total_years * 0.95:
+            status = "Tersedia kuat"
+            note = "Relatif aman untuk pembandingan lintas periode pada filter aktif."
+        elif coverage > 0:
+            status = "Tersedia parsial"
+            note = "Pembandingan lintas periode perlu menggunakan coverage dan persentase, bukan jumlah mentah."
+        else:
+            status = "Tidak tersedia"
+            note = "Tidak dapat digunakan untuk analisis parameter pada filter aktif."
+        if col == "pm25" and coverage > 0:
+            note = "PM2.5 tersedia mulai periode tertentu; interpretasi historis sebelum tahun mulai tidak boleh dianggap sebagai PM2.5 rendah."
+        rows.append({
+            "Parameter": col.upper(),
+            "Tahun Mulai": first_year,
+            "Tahun Akhir": last_year,
+            "Coverage": coverage,
+            "Tahun Tersedia": years_available,
+            "Status": status,
+            "Catatan Interpretasi": note,
+        })
+    return pd.DataFrame(rows)
+
+
+def parameter_availability_yearly(df: pd.DataFrame) -> pd.DataFrame:
+    """Coverage percentage per year and parameter for heatmap."""
+    rows = []
+    if df is None or df.empty or "tahun" not in df.columns:
+        return pd.DataFrame(columns=["tahun", "parameter", "coverage_pct"])
+    for year, group in df.groupby("tahun"):
+        for col in POLLUTANT_COLS:
+            if col in group.columns:
+                coverage = float(group[col].notna().mean() * 100)
+            else:
+                coverage = 0.0
+            rows.append({"tahun": int(year), "parameter": col.upper(), "coverage_pct": coverage})
+    return pd.DataFrame(rows)
+
+
+def fig_parameter_availability_heatmap(df: pd.DataFrame) -> go.Figure:
+    """Heatmap tahun × parameter untuk melihat fairness pembandingan polutan."""
+    coverage = parameter_availability_yearly(df)
+    if coverage.empty:
+        fig = go.Figure()
+        fig.update_layout(title="Ketersediaan parameter per tahun")
+        return apply_fig_style(fig, height=420, legend=False)
+    pivot = coverage.pivot_table(index="parameter", columns="tahun", values="coverage_pct", fill_value=0)
+    pivot = pivot.reindex(index=[c.upper() for c in POLLUTANT_COLS if c.upper() in pivot.index])
+    fig = px.imshow(
+        pivot,
+        aspect="auto",
+        color_continuous_scale=["#F8FAFC", "#DBEAFE", "#BAE6FD", "#6EE7B7", "#00A676"],
+        zmin=0,
+        zmax=100,
+        title="Heatmap ketersediaan parameter per tahun",
+        labels=dict(x="Tahun", y="Parameter", color="Coverage (%)"),
+    )
+    fig.update_traces(
+        text=np.round(pivot.values, 0).astype(int),
+        texttemplate="%{text}%",
+        textfont=dict(color="#102033", size=11, family="JetBrains Mono, Inter, Arial, sans-serif"),
+        hovertemplate="Parameter: %{y}<br>Tahun: %{x}<br>Coverage: %{z:.1f}%<extra></extra>",
+    )
+    fig.update_layout(
+        coloraxis_colorbar=dict(
+            title=dict(text="Coverage (%)", font=dict(color="#102033", size=13), side="right"),
+            tickfont=dict(color="#102033", size=12),
+            bgcolor="rgba(255,255,255,0.98)",
+            outlinecolor="rgba(15,23,42,0.28)",
+            outlinewidth=1,
+            thickness=18,
+            len=0.72,
+        )
+    )
+    return apply_fig_style(fig, height=440, legend=False)
+
+
+def add_context_annotations(fig: go.Figure, df: pd.DataFrame) -> go.Figure:
+    """Add contextual annotations to time series without claiming causality."""
+    if df is None or df.empty or "tanggal_clean" not in df.columns:
+        return fig
+    date_min = pd.to_datetime(df["tanggal_clean"].min())
+    date_max = pd.to_datetime(df["tanggal_clean"].max())
+
+    # COVID-19 contextual period. This is not a causal claim.
+    covid_start = CONTEXT_EVENTS["covid_start"]
+    covid_end = CONTEXT_EVENTS["covid_end"]
+    if date_min <= covid_end and date_max >= covid_start:
+        fig.add_vrect(
+            x0=max(covid_start, date_min),
+            x1=min(covid_end, date_max),
+            fillcolor="#64748B",
+            opacity=0.10,
+            line_width=0,
+            annotation_text="COVID-19 (konteks)",
+            annotation_position="top left",
+            annotation_font_color="#334155",
+            annotation_font_size=11,
+        )
+
+    # Dynamic PM2.5 availability annotation.
+    pm25_year = first_available_year(df, "pm25")
+    if pm25_year is not None:
+        x_pm25 = pd.Timestamp(year=pm25_year, month=1, day=1)
+        if date_min <= x_pm25 <= date_max:
+            fig.add_vline(
+                x=x_pm25,
+                line_dash="dot",
+                line_width=1.5,
+                line_color="#16A34A",
+                annotation_text=f"PM2.5 mulai tersedia ({pm25_year})",
+                annotation_position="top right",
+                annotation_font_color="#166534",
+                annotation_font_size=11,
+            )
+    return fig
+
+
+def comparison_guardrail_table() -> pd.DataFrame:
+    """Static executive guardrails so comparisons are not over-claimed."""
+    return pd.DataFrame([
+        {
+            "Kondisi": "PM2.5 tersedia mulai periode tertentu",
+            "Risiko Salah Tafsir": "PM2.5 terlihat tidak dominan pada tahun awal",
+            "Cara Baca yang Benar": "Bandingkan PM2.5 hanya pada periode ketika datanya tersedia atau tampilkan catatan coverage.",
+        },
+        {
+            "Kondisi": "Periode COVID-19 / pembatasan aktivitas",
+            "Risiko Salah Tafsir": "Perubahan tren dianggap pasti akibat COVID-19",
+            "Cara Baca yang Benar": "Gunakan sebagai anotasi konteks; klaim sebab-akibat membutuhkan analisis kausal dan data aktivitas.",
+        },
+        {
+            "Kondisi": "Jumlah observasi antar stasiun/tahun berbeda",
+            "Risiko Salah Tafsir": "Ranking berbasis jumlah mentah menjadi bias",
+            "Cara Baca yang Benar": "Gunakan persentase observasi, median, dan coverage sebagai pembanding.",
+        },
+        {
+            "Kondisi": "Critical menunjukkan parameter indeks tertinggi",
+            "Risiko Salah Tafsir": "Critical dianggap sebagai konsentrasi fisik terbesar atau penyebab tunggal",
+            "Cara Baca yang Benar": "Baca sebagai indikator diagnostik dan validasi dengan data sumber emisi/meteorologi.",
+        },
+        {
+            "Kondisi": "Dashboard menggunakan data historis",
+            "Risiko Salah Tafsir": "Dashboard dianggap menunjukkan status udara hari ini",
+            "Cara Baca yang Benar": "Gunakan untuk pola dan prioritas; keputusan real-time memerlukan data pemantauan terbaru.",
+        },
+    ])
+
 
 # =============================================================================
 # LIGHT TABLE RENDERER
@@ -1906,7 +2100,8 @@ def fig_trend_line(df: pd.DataFrame, granularity: str, view_mode: str, include_a
     )
     fig.update_traces(line=dict(width=2.6), marker=dict(size=7))
     fig = add_threshold_lines(fig, include_all=include_all_thresholds)
-    return apply_fig_style(fig, height=500)
+    fig = add_context_annotations(fig, df_plot)
+    return apply_fig_style(fig, height=520)
 
 
 def fig_critical_by_station(df: pd.DataFrame) -> go.Figure:
@@ -2213,6 +2408,11 @@ def page_trend(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
 
     section_title("Tren ISPU dengan ambang Tidak Sehat")
     st.plotly_chart(fig_trend_line(df, granularity, view_mode, include_all_thresholds), use_container_width=True, config=PLOTLY_CONFIG)
+    pm25_year = first_available_year(df, "pm25")
+    context_note = "Grafik tren diberi anotasi periode khusus seperti COVID-19 sebagai konteks interpretasi, bukan bukti sebab-akibat."
+    if pm25_year is not None:
+        context_note += f" PM2.5 mulai tersedia pada filter aktif sejak {pm25_year}; pembacaan pencemar sebelum periode tersebut perlu berhati-hati."
+    insight_panel("Konteks pembacaan tren", context_note, kind="warning")
 
     left, right = st.columns(2)
     with left:
@@ -2345,9 +2545,33 @@ def page_critical(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
 
     page_brief("Konteks keputusan", "Parameter pencemar apa yang paling sering mendorong risiko kualitas udara dan perlu menjadi fokus pengendalian? Critical dibaca sebagai parameter pembentuk indeks tertinggi, bukan konsentrasi fisik terbesar.")
 
-    crit_df = df[df["critical"].notna() & (df["critical"] != "TIDAK ADA DATA")].copy()
+    pm25_year_full = first_available_year(full_df, "pm25")
+    mode_options = ["Semua data aktif", "Sejak PM2.5 tersedia", "Observasi dengan semua parameter tersedia"]
+    analysis_mode = st.radio(
+        "Mode pembacaan pencemar kritis",
+        options=mode_options,
+        horizontal=True,
+        index=0,
+        help="Gunakan mode sejak PM2.5 tersedia atau observasi lengkap untuk pembandingan polutan yang lebih adil.",
+    )
+    analysis_df = df.copy()
+    mode_note = "Mode semua data aktif digunakan untuk gambaran umum."
+    if analysis_mode == "Sejak PM2.5 tersedia":
+        if pm25_year_full is not None:
+            analysis_df = analysis_df[analysis_df["tahun"] >= pm25_year_full].copy()
+            mode_note = f"Analisis dibatasi sejak PM2.5 tersedia ({pm25_year_full}) agar dominasi pencemar tidak bias oleh ketiadaan data PM2.5 pada periode awal."
+        else:
+            mode_note = "PM2.5 tidak tersedia pada dataset, sehingga mode ini tetap memakai data aktif."
+    elif analysis_mode == "Observasi dengan semua parameter tersedia":
+        available_cols = [c for c in POLLUTANT_COLS if c in analysis_df.columns]
+        if available_cols:
+            analysis_df = analysis_df.dropna(subset=available_cols).copy()
+            mode_note = "Analisis dibatasi pada observasi dengan seluruh parameter pencemar tersedia agar pembandingan antar parameter lebih seimbang."
+    insight_panel("Mode pembacaan adil", mode_note, kind="warning")
+
+    crit_df = analysis_df[analysis_df["critical"].notna() & (analysis_df["critical"] != "TIDAK ADA DATA")].copy()
     if crit_df.empty:
-        st.warning("Tidak ada data pencemar kritis yang tersedia pada filter aktif.")
+        st.warning("Tidak ada data pencemar kritis yang tersedia pada mode/filter aktif. Coba gunakan mode 'Semua data aktif' atau longgarkan filter.")
         return
 
     top_crit = mode_or_dash(crit_df["critical"])
@@ -2397,7 +2621,7 @@ def page_critical(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
             temuan=f"Pencemar kritis dominan adalah <b>{top_crit}</b> dengan porsi <b>{fmt_pct(top_crit_pct, 1)}</b> dari <b>{fmt_int(len(crit_df))} observasi tanggal-stasiun yang memiliki critical</b>. Tiga pencemar teratas adalah <b>{top3_critical}</b>.",
             makna=f"Pada observasi Tidak Sehat+, pencemar dominan adalah <b>{top_crit_unhealthy}</b>. Ini mengarahkan kebijakan dari isu umum kualitas udara menjadi fokus parameter yang perlu dikendalikan.",
             tindakan=f"Untuk dominasi <b>{top_crit}</b>, {policy_guidance} Jika fokus khusus pada kondisi Tidak Sehat+, gunakan arahan untuk <b>{top_crit_unhealthy}</b>: {unhealthy_guidance}",
-            batasan="Critical adalah parameter pembentuk indeks tertinggi, bukan konsentrasi fisik terbesar dan bukan bukti sebab-akibat tunggal. Analisis lanjutan perlu data sumber emisi, meteorologi, dan validasi lapangan.",
+            batasan=f"Mode analisis: {analysis_mode}. Critical adalah parameter pembentuk indeks tertinggi, bukan konsentrasi fisik terbesar dan bukan bukti sebab-akibat tunggal. Analisis lanjutan perlu data sumber emisi, meteorologi, dan validasi lapangan.",
         ),
     )
     insight_panel(
@@ -2580,6 +2804,32 @@ def page_data_quality(df: pd.DataFrame, full_df: pd.DataFrame, log_df: pd.DataFr
         "Catatan batasan data",
         "Ketersediaan parameter tidak selalu sama sepanjang periode historis. Khusus PM2.5, interpretasi lintas tahun perlu mempertimbangkan periode kemunculan data agar Kepala Dinas tidak salah menyimpulkan dominasi atau absennya PM2.5 pada tahun awal.",
         kind="warning",
+    )
+
+    section_title("Timeline ketersediaan parameter")
+    st.plotly_chart(fig_parameter_availability_heatmap(full_df), use_container_width=True, config=PLOTLY_CONFIG)
+    availability_table = parameter_availability_summary(full_df)
+    render_light_table(
+        availability_table.rename(columns={"Coverage": "Coverage (%)"}),
+        progress_cols=["Coverage (%)"],
+        int_cols=["Tahun Tersedia"],
+        chip_cols=["Status"],
+        long_cols=["Catatan Interpretasi"],
+        max_height=420,
+    )
+    pm25_year = first_available_year(full_df, "pm25")
+    if pm25_year is not None:
+        insight_panel(
+            "Konteks PM2.5",
+            f"PM2.5 mulai tersedia pada dataset final sejak <b>{pm25_year}</b>. Artinya, ketiadaan dominasi PM2.5 sebelum periode tersebut tidak boleh dibaca sebagai bukti PM2.5 rendah; gunakan mode pembacaan yang adil pada menu Pencemar Kritis untuk membatasi analisis sejak PM2.5 tersedia.",
+            kind="warning",
+        )
+
+    section_title("Kapan angka tidak boleh dibandingkan langsung?")
+    render_light_table(
+        comparison_guardrail_table(),
+        long_cols=["Kondisi", "Risiko Salah Tafsir", "Cara Baca yang Benar"],
+        max_height=480,
     )
 
     section_title("Hasil Validasi Akhir")

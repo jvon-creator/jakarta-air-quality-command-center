@@ -297,14 +297,6 @@ button[data-baseweb="tab"] { font-weight: 800 !important; color: var(--slate) !i
 button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important; }
 .streamlit-expanderHeader { font-weight: 800 !important; color: var(--ink) !important; }
 
-.decision-grid { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-top: 11px; }
-.decision-tile { border-radius: 16px; padding: 10px 12px; background: #FFFFFF; border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
-.decision-tile:nth-child(1) { background: linear-gradient(135deg, #FFFFFF, #EAF6FF); }
-.decision-tile:nth-child(2) { background: linear-gradient(135deg, #FFFFFF, #FFF1E8); }
-.decision-tile:nth-child(3) { background: linear-gradient(135deg, #FFFFFF, #ECFDF5); }
-.decision-tile:nth-child(4) { background: linear-gradient(135deg, #FFFFFF, #F3EEFF); }
-.decision-tile .tile-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .66rem; letter-spacing: .10em; text-transform: uppercase; color: var(--muted) !important; font-weight: 800; }
-.decision-tile .tile-value { margin-top: 5px; font-family: 'Barlow Condensed', 'Inter', sans-serif; font-weight: 800; font-size: 1.18rem; line-height: .98; color: var(--ink) !important; }
 .air-ribbon-wrap { position: relative; z-index: 2; margin-top: 10px; border-radius: 16px; padding: 9px 11px; background: #FFFFFF; border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(15,23,42,.055); }
 .air-ribbon-title { display: flex; justify-content: space-between; gap: 12px; color: var(--slate) !important; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 800; font-size: .67rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
 .air-ribbon { display: flex; width: 100%; overflow: hidden; height: 13px; border-radius: 999px; border: 1px solid rgba(15,23,42,.16); background: #FFFFFF; }
@@ -354,15 +346,13 @@ button[data-baseweb="tab"][aria-selected="true"] { color: var(--ink) !important;
 .empty-state-panel * { color: var(--ink) !important; }
 
 /* Readability hardening: anything inside custom panels must stay dark, never pastel-on-pastel. */
-.command-hero *, .kpi-card *, .glass-panel *, .insight-panel *, .warning-panel *, .decision-tile *, .air-ribbon-wrap *, .page-brief *, .sidebar-purpose * { text-shadow: none !important; }
+.command-hero *, .kpi-card *, .glass-panel *, .insight-panel *, .warning-panel *, .air-ribbon-wrap *, .page-brief *, .sidebar-purpose * { text-shadow: none !important; }
 
 @media (max-width: 980px) {
     .hero-grid { grid-template-columns: 1fr; }
     .hero-meta { min-width: unset; }
     .command-hero { padding: 24px 22px; border-radius: 26px; }
-    .decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 620px) { .decision-grid { grid-template-columns: 1fr; } }
 
 
 /* Light executive tables: replace Streamlit's dark dataframe renderer for decision tables. */
@@ -1128,21 +1118,6 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
             period = f"{start} – {end}"
             active_observations = fmt_int(len(filtered))
 
-    if filtered.empty:
-        avg_ispu = np.nan
-        unhealthy = np.nan
-        top_station_code = "—"
-        top_critical = "—"
-    else:
-        avg_ispu = filtered["max"].mean()
-        unhealthy = pct_true(filtered["flag_tidak_sehat_plus"])
-        st_summary = station_summary(filtered)
-        top_station_code = station_code(st_summary.iloc[0]["stasiun"]) if not st_summary.empty else "—"
-        top_critical = mode_or_dash(filtered["critical"])
-
-    status_cat = ispu_status_from_average(avg_ispu)
-    page_purpose = PAGE_PURPOSE.get(current_page, "")
-
     hero_html = f"""
     <div class="command-hero" aria-label="Observatorium kualitas udara Jakarta dengan nuansa langit terang dan spektrum risiko ISPU">
         <div class="hero-grid">
@@ -1165,16 +1140,8 @@ def hero(current_page: str, df: pd.DataFrame, filtered: pd.DataFrame) -> None:
     """
     st.markdown(dedent(hero_html).strip(), unsafe_allow_html=True)
 
-    decision_html = f"""
-    <div class="decision-grid" aria-label="Ringkasan keputusan kualitas udara pada filter aktif">
-        <div class="decision-tile"><div class="tile-label">Status rata-rata</div><div class="tile-value">{html_escape(status_cat)}</div></div>
-        <div class="decision-tile"><div class="tile-label">Tidak Sehat+</div><div class="tile-value">{html_escape(fmt_pct(unhealthy, 1))}</div></div>
-        <div class="decision-tile"><div class="tile-label">Prioritas lokasi</div><div class="tile-value">{html_escape(top_station_code)}</div></div>
-        <div class="decision-tile"><div class="tile-label">Pencemar dominan</div><div class="tile-value">{html_escape(top_critical)}</div></div>
-    </div>
-    """
-    st.markdown(dedent(decision_html).strip(), unsafe_allow_html=True)
-
+    # Decision KPI cards intentionally are not rendered in hero to avoid redundancy.
+    # The single source of executive KPIs is the page-level KPI section.
     ribbon_html = air_quality_ribbon(filtered)
     if ribbon_html:
         st.markdown(dedent(ribbon_html).strip(), unsafe_allow_html=True)
@@ -1667,7 +1634,7 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
     top_station = stations.iloc[0] if not stations.empty else None
 
     section_title("Napas Kota Terkini")
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     with c1:
         kpi_card("Rata-rata ISPU", fmt_float(avg_ispu, 1), note=ispu_status_from_average(avg_ispu), accent=CATEGORY_COLORS.get(ispu_status_from_average(avg_ispu), "#00A676"))
     with c2:
@@ -1678,6 +1645,8 @@ def page_overview(df: pd.DataFrame, full_df: pd.DataFrame) -> None:
         kpi_card("Kategori dominan", top_category, note="paling sering muncul", accent=CATEGORY_COLORS.get(top_category, "#64748B"))
     with c5:
         kpi_card("Stasiun prioritas", station_code(top_station["stasiun"]) if top_station is not None else "—", note=(top_station["stasiun"] if top_station is not None else "—"), accent="#E11D48")
+    with c6:
+        kpi_card("Pencemar dominan", top_critical, note="critical paling sering", accent=CRITICAL_COLORS.get(top_critical, "#64748B"))
 
     section_title("Komposisi risiko dan pencemar utama")
     left, right = st.columns([1.1, 1])
